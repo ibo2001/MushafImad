@@ -96,7 +96,7 @@ public actor QuranImageDownloadManager {
         for page in 1...604 {
             for line in 1...15 {
                 try Task.checkCancellation()
-                try await download(page: page, line: line)
+                _ = try await download(page: page, line: line)
                 completed += 1
                 if let progress {
                     await MainActor.run {

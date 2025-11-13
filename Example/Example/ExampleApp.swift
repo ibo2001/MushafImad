@@ -5,7 +5,6 @@
 //  Created by Ibrahim Qraiqe on 12/11/2025.
 //
 
-#if !SWIFT_PACKAGE
 import SwiftUI
 import MushafImad
 
@@ -21,13 +20,27 @@ struct ExampleApp: App {
             AppLogger.shared.error("Failed to initialize Realm: \(error.localizedDescription)", category: .realm)
         }
     }
+    
     var body: some Scene {
         WindowGroup {
             ContentView()
                 .environmentObject(ReciterService.shared)
                 .environmentObject(toastManager)
-                .overlay(ToastOverlayView())
         }
+        #if os(macOS)
+        .windowStyle(.hiddenTitleBar)
+        .defaultSize(width: 1200, height: 800)
+        #endif
+    }
+}
+
+#if os(iOS)
+extension ExampleApp {
+    var overlayedContent: some View {
+        ContentView()
+            .environmentObject(ReciterService.shared)
+            .environmentObject(toastManager)
+            .overlay(ToastOverlayView())
     }
 }
 #endif

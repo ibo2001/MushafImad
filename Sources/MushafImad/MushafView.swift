@@ -187,8 +187,10 @@ public struct MushafView: View {
                     .tag(pageNumber)
             }
         }
+        #if os(iOS)
         .tabViewStyle(.page(indexDisplayMode: .never))
         .indexViewStyle(.page(backgroundDisplayMode: .never))
+        #endif
     }
     
     private func verticalPageView(currentHighlight: Verse?) -> some View {

@@ -57,6 +57,10 @@ struct RoundedCorner: Shape {
                 cgPath.addLine(to: points[0])
             case .curveTo:
                 cgPath.addCurve(to: points[2], control1: points[0], control2: points[1])
+            case .cubicCurveTo:
+                cgPath.addCurve(to: points[2], control1: points[0], control2: points[1])
+            case .quadraticCurveTo:
+                cgPath.addQuadCurve(to: points[1], control: points[0])
             case .closePath:
                 cgPath.closeSubpath()
             @unknown default:

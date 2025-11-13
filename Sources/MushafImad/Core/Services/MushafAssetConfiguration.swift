@@ -86,7 +86,19 @@ private extension Bundle {
         #if canImport(UIKit)
         return UIImage(named: name, in: self, compatibleWith: nil) != nil
         #elseif canImport(AppKit)
-        return NSImage(named: NSImage.Name(name), in: self, for: nil) != nil
+        // On macOS, check if image exists in the bundle
+        // Check for file-based images
+        let imageExtensions = ["png", "jpg", "jpeg", "tiff", "tif", "pdf"]
+        for ext in imageExtensions {
+            if self.url(forResource: name, withExtension: ext) != nil {
+                return true
+            }
+        }
+        // For asset catalogs, we can't easily check without loading
+        // SwiftUI's Image(name, bundle:) will handle asset catalog loading
+        // So we'll be optimistic and return true if the bundle is valid
+        // The actual existence will be determined when Image tries to load it
+        return self.bundleIdentifier != nil
         #else
         return false
         #endif

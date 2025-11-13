@@ -7,6 +7,11 @@
 
 import SwiftUI
 import AVKit
+#if canImport(UIKit)
+import UIKit
+#elseif canImport(AppKit)
+import AppKit
+#endif
 
 public struct QuranPlayer: View {
     @ObservedObject public var viewModel: QuranPlayerViewModel
@@ -341,6 +346,7 @@ public struct QuranPlayer: View {
     .environment(\.locale, .init(identifier: "ar_SA"))
 }
 
+#if os(iOS)
 public struct AirPlayRoutePickerView: UIViewRepresentable {
     public init() {}
 
@@ -355,3 +361,13 @@ public struct AirPlayRoutePickerView: UIViewRepresentable {
         // Update the view if needed
     }
 }
+#elseif os(macOS)
+// AVRoutePickerView is not available on macOS
+public struct AirPlayRoutePickerView: View {
+    public init() {}
+    
+    public var body: some View {
+        EmptyView()
+    }
+}
+#endif

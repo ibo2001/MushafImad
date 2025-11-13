@@ -28,7 +28,11 @@ public struct ReciterPickerView: View {
                     Text($0.displayName)
                 }
             }
+            #if os(iOS)
             .pickerStyle(.wheel)
+            #else
+            .pickerStyle(.menu)
+            #endif
         }
         .padding(.horizontal, 16)
         .onChange(of: savedReciterId) {
