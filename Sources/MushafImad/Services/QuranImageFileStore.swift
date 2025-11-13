@@ -2,7 +2,7 @@
 //  QuranImageFileStore.swift
 //  MushafImad
 //
-//  Created by Assistant on 30/10/2025.
+//  Created by Ibrahim Qraiqe on 30/10/2025.
 //
 
 import Foundation

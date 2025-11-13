@@ -2,7 +2,7 @@
 //  QuranDataCacheService.swift
 //  MushafImad
 //
-//  Created by Assistant on 31/10/2025.
+//  Created by Ibrahim Qraiqe on 31/10/2025.
 //
 
 import Foundation

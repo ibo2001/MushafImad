@@ -2,7 +2,7 @@
 //  Bundle+Mushaf.swift
 //  MushafImadSPM
 //
-//  Created by Assistant on 10/11/2025.
+//  Created by Ibrahim Qraiqe  on 10/11/2025.
 //
 
 import Foundation

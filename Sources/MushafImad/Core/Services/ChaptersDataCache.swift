@@ -2,7 +2,7 @@
 //  ChaptersDataCache.swift
 //  MushafImad
 //
-//  Created by Assistant on 05/11/2025.
+//  Created by Ibrahim Qraiqe on 05/11/2025.
 //
 
 import Foundation

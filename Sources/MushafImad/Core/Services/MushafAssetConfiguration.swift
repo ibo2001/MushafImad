@@ -2,7 +2,7 @@
 //  MushafAssetConfiguration.swift
 //  MushafImad
 //
-//  Created by Assistant on 12/11/2025.
+//  Created by Ibrahim Qraiqe on 12/11/2025.
 //
 
 import SwiftUI
