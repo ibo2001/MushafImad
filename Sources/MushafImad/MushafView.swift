@@ -110,7 +110,7 @@ public struct MushafView: View {
                 LoadingView(message: viewModel.isLoading ? String(localized: "Loading Quran data...") : String(localized: "Preparing page..."))
             } else {
                 pageView
-                    .foregroundStyle(.naturalBlack)
+                    .foregroundStyle(.primary)
                 
             }
         }
