@@ -66,11 +66,42 @@ public final class ReciterService: ObservableObject {
         loadAvailableRecitersSync()
     }
     
+    /// Simple struct for decoding reciter IDs from the manifest JSON.
+    private struct ReciterManifestEntry: Codable {
+        let id: Int
+    }
+    
+    /// Loads reciter IDs from the reciters_manifest.json file.
+    private func loadReciterIdsFromManifest() -> [Int] {
+        guard let url = Bundle.main.url(forResource: "reciters_manifest", withExtension: "json") else {
+            AppLogger.shared.warn("ReciterService: reciters_manifest.json not found in bundle", category: .network)
+            return []
+        }
+        
+        do {
+            let data = try Data(contentsOf: url)
+            let entries = try JSONDecoder().decode([ReciterManifestEntry].self, from: data)
+            let ids = entries.map { $0.id }
+            AppLogger.shared.info("ReciterService: Loaded \(ids.count) reciter IDs from manifest", category: .network)
+            return ids
+        } catch {
+            AppLogger.shared.error("ReciterService: Failed to decode reciters_manifest.json: \(error.localizedDescription)", category: .network)
+            return []
+        }
+    }
+    
     private func loadAvailableRecitersSync() {
         var reciters: [ReciterInfo] = []
         
-        // List of available reciter IDs based on JSON files
-        let reciterIds = [1, 5, 9, 10, 31, 32, 51, 53, 60, 62, 67, 74, 78, 106, 112, 118, 159, 256]
+        // Load reciter IDs from JSON manifest
+        let reciterIds = loadReciterIdsFromManifest()
+        
+        // If manifest loading failed, there's no fallback for IDs
+        guard !reciterIds.isEmpty else {
+            AppLogger.shared.error("ReciterService: No reciter IDs available", category: .network)
+            self.isLoading = false
+            return
+        }
         
         // Try to load from JSON files first
         var loadedFromJSON = false
