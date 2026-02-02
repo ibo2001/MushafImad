@@ -3,18 +3,60 @@ import SwiftUI
 import Combine
 
 /// Central registry that exposes available reciters and persists the selection.
+///
+/// `ReciterService` is responsible for:
+/// - Loading available reciters from timing JSON files or embedded fallback data
+/// - Managing the currently selected reciter
+/// - Persisting user selection across app launches
+///
+/// ## Usage
+/// Access the shared instance to get available reciters or change the selection:
+/// ```swift
+/// // Get all available reciters
+/// let reciters = ReciterService.shared.availableReciters
+///
+/// // Select a specific reciter
+/// if let reciter = ReciterService.shared.getReciterById(1) {
+///     ReciterService.shared.selectReciter(reciter)
+/// }
+///
+/// // Get the audio URL for the current reciter
+/// let baseURL = ReciterService.shared.getCurrentReciterBaseURL()
+/// ```
 @MainActor
 public final class ReciterService: ObservableObject {
+    /// The shared singleton instance of `ReciterService`.
+    ///
+    /// Use this instance to access reciter data throughout the app.
     public static let shared = ReciterService()
     
     /// Lightweight reciter descriptor surfaced to the UI layer.
+    ///
+    /// This struct contains all the information needed to display and play audio from a reciter.
+    /// It conforms to `Codable` for persistence and `Equatable` for comparison.
     public struct ReciterInfo: Identifiable, Equatable, Codable {
+        /// Unique identifier for the reciter, matching the ID used in the timing JSON files.
         public let id: Int
+        
+        /// The reciter's name in Arabic script (e.g., "مشاري العفاسي").
         public let nameArabic: String
+        
+        /// The reciter's name in English (e.g., "Mishary Al-Afasy").
         public let nameEnglish: String
+        
+        /// The recitation style or transmission chain (e.g., "Hafs A'n Assem").
         public let rewaya: String
+        
+        /// The base URL string where the reciter's audio files are hosted.
         public let folderURL: String
         
+        /// Creates a new reciter info instance.
+        /// - Parameters:
+        ///   - id: Unique identifier for the reciter.
+        ///   - nameArabic: The reciter's name in Arabic script.
+        ///   - nameEnglish: The reciter's name in English.
+        ///   - rewaya: The recitation style or transmission chain.
+        ///   - folderURL: The base URL string for the reciter's audio files.
         public init(
             id: Int,
             nameArabic: String,
@@ -47,7 +89,16 @@ public final class ReciterService: ObservableObject {
         }
     }
     
+    /// List of all available reciters loaded from the timing JSON files or fallback data.
+    ///
+    /// This array is populated during initialization and sorted by reciter ID.
+    /// Use this to display a list of reciters for the user to choose from.
     @Published public private(set) var availableReciters: [ReciterInfo] = []
+    
+    /// The currently selected reciter for audio playback.
+    ///
+    /// When changed, the selection is automatically persisted to `AppStorage`.
+    /// If no reciter has been explicitly selected, the first available reciter is used as default.
     @Published public var selectedReciter: ReciterInfo? {
         didSet {
             // Save to AppStorage when reciter changes
@@ -57,6 +108,10 @@ public final class ReciterService: ObservableObject {
         }
     }
     
+    /// Indicates whether the service is currently loading reciter data.
+    ///
+    /// This is `true` during initialization and becomes `false` once all reciter
+    /// information has been loaded and the default selection has been made.
     @Published public private(set) var isLoading: Bool = true
     
     @AppStorage("selectedReciterId") private var savedReciterId: Int = 0
@@ -128,17 +183,30 @@ public final class ReciterService: ObservableObject {
         self.isLoading = false
     }
     
-    /// Update the active reciter and persist the choice.
+    /// Updates the active reciter and persists the choice to `AppStorage`.
+    ///
+    /// Use this method to programmatically change the selected reciter.
+    /// The change will be automatically saved and restored on the next app launch.
+    ///
+    /// - Parameter reciter: The reciter to select.
     public func selectReciter(_ reciter: ReciterInfo) {
         selectedReciter = reciter
     }
     
-    /// Fetch a reciter from the loaded list using its identifier.
+    /// Fetches a reciter from the loaded list using its unique identifier.
+    ///
+    /// - Parameter id: The unique identifier of the reciter to find.
+    /// - Returns: The `ReciterInfo` if found, or `nil` if no reciter matches the ID.
     public func getReciterById(_ id: Int) -> ReciterInfo? {
         return availableReciters.first(where: { $0.id == id })
     }
     
-    /// Convenience accessor for the currently selected reciter's audio base URL.
+    /// Returns the base URL for the currently selected reciter's audio files.
+    ///
+    /// This is a convenience method that returns the `audioBaseURL` of the
+    /// currently selected reciter, or `nil` if no reciter is selected.
+    ///
+    /// - Returns: The base URL for audio files, or `nil` if unavailable.
     public func getCurrentReciterBaseURL() -> URL? {
         return selectedReciter?.audioBaseURL
     }
