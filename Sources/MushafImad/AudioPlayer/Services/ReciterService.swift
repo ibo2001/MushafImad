@@ -73,7 +73,7 @@ public final class ReciterService: ObservableObject {
     
     /// Loads reciter IDs from the reciters_manifest.json file.
     private func loadReciterIdsFromManifest() -> [Int] {
-        guard let url = Bundle.main.url(forResource: "reciters_manifest", withExtension: "json") else {
+        guard let url = Bundle.module.url(forResource: "reciters_manifest", withExtension: "json") else {
             AppLogger.shared.warn("ReciterService: reciters_manifest.json not found in bundle", category: .network)
             return []
         }
