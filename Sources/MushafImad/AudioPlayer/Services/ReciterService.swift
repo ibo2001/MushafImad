@@ -66,16 +66,33 @@ public final class ReciterService: ObservableObject {
         loadAvailableRecitersSync()
     }
     
+    /// Loads the list of available reciter IDs from the reciters_manifest.json file.
+    private func loadReciterManifest() -> [ReciterInfo] {
+        guard let url = Bundle.module.url(forResource: "reciters_manifest", withExtension: "json", subdirectory: "Res"),
+              let data = try? Data(contentsOf: url) else {
+            AppLogger.shared.warn("ReciterService: Could not load reciters_manifest.json", category: .network)
+            return []
+        }
+        
+        do {
+            let decoder = JSONDecoder()
+            return try decoder.decode([ReciterInfo].self, from: data)
+        } catch {
+            AppLogger.shared.error("ReciterService: Failed to decode reciters_manifest.json: \(error)", category: .network)
+            return []
+        }
+    }
+    
     private func loadAvailableRecitersSync() {
         var reciters: [ReciterInfo] = []
         
-        // List of available reciter IDs based on JSON files
-        let reciterIds = [1, 5, 9, 10, 31, 32, 51, 53, 60, 62, 67, 74, 78, 106, 112, 118, 159, 256]
+        // Load reciter IDs from JSON manifest
+        let manifestReciters = loadReciterManifest()
         
-        // Try to load from JSON files first
-        var loadedFromJSON = false
-        for id in reciterIds {
-            if let reciterTiming = AyahTimingService.shared.getReciter(id: id) {
+        // Try to load detailed timing data from individual JSON files first
+        var loadedFromTimingFiles = false
+        for manifestReciter in manifestReciters {
+            if let reciterTiming = AyahTimingService.shared.getReciter(id: manifestReciter.id) {
                 let info = ReciterInfo(
                     id: reciterTiming.id,
                     nameArabic: reciterTiming.name,
@@ -84,22 +101,28 @@ public final class ReciterService: ObservableObject {
                     folderURL: reciterTiming.folder_url
                 )
                 reciters.append(info)
-                loadedFromJSON = true
+                loadedFromTimingFiles = true
             }
         }
         
-        // If no reciters loaded from JSON, use the embedded data as fallback
-        if !loadedFromJSON {
-            AppLogger.shared.warn("ReciterService: No reciters loaded from JSON files, using embedded fallback data", category: .network)
-            for reciterData in ReciterDataProvider.reciters {
-                let info = ReciterInfo(
-                    id: reciterData.id,
-                    nameArabic: reciterData.nameArabic,
-                    nameEnglish: reciterData.nameEnglish,
-                    rewaya: reciterData.rewaya,
-                    folderURL: reciterData.folderURL
-                )
-                reciters.append(info)
+        // If no reciters loaded from timing files, use the manifest data directly
+        if !loadedFromTimingFiles {
+            if !manifestReciters.isEmpty {
+                AppLogger.shared.info("ReciterService: Using manifest data (no timing files found)", category: .network)
+                reciters = manifestReciters
+            } else {
+                // Last resort: use ReciterDataProvider as fallback
+                AppLogger.shared.warn("ReciterService: No manifest or timing files found, using embedded fallback data", category: .network)
+                for reciterData in ReciterDataProvider.reciters {
+                    let info = ReciterInfo(
+                        id: reciterData.id,
+                        nameArabic: reciterData.nameArabic,
+                        nameEnglish: reciterData.nameEnglish,
+                        rewaya: reciterData.rewaya,
+                        folderURL: reciterData.folderURL
+                    )
+                    reciters.append(info)
+                }
             }
         }
         
