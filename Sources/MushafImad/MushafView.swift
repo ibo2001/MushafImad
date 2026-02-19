@@ -74,9 +74,9 @@ public struct MushafView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var playingVerse: Verse? = nil
-    #if canImport(UIKit)
+#if canImport(UIKit)
     @StateObject private var tiltManager = TiltScrollManager()
-    #endif
+#endif
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     
@@ -155,20 +155,25 @@ public struct MushafView: View {
                 break
             }
         }
+        .onAppear {
+#if canImport(UIKit)
+            tiltManager.activate()
+#endif
+        }
         // In MushafView.body:
         .onDisappear {
-            #if canImport(UIKit)
+#if canImport(UIKit)
             tiltManager.deactivate()
-            #endif
+#endif
         }
     }
-
+    
     // MARK: - View Components
     @ViewBuilder
     private var pageView: some View {
         let currentHighlight = playingVerse
-            ?? highlightedVerseBinding?.wrappedValue
-            ?? staticHighlightedVerse
+        ?? highlightedVerseBinding?.wrappedValue
+        ?? staticHighlightedVerse
         
         Group {
             if scrollingMode == .horizontal {
@@ -187,10 +192,10 @@ public struct MushafView: View {
                     .tag(pageNumber)
             }
         }
-        #if os(iOS)
+#if os(iOS)
         .tabViewStyle(.page(indexDisplayMode: .never))
         .indexViewStyle(.page(backgroundDisplayMode: .never))
-        #endif
+#endif
     }
     
     public func verticalPageView(currentHighlight: Verse?) -> some View {
@@ -214,13 +219,13 @@ public struct MushafView: View {
                     }
                 }
                 .scrollTargetLayout()
-    #if canImport(UIKit)
+#if canImport(UIKit)
                 .background(
-                     ScrollViewIntrospector { scrollView in
-                         tiltManager.setScrollView(scrollView)
-                     }
+                    ScrollViewIntrospector { scrollView in
+                        tiltManager.setScrollView(scrollView)
+                    }
                 )
-    #endif
+#endif
             }
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: scrollBinding, anchor: .center)
@@ -235,7 +240,7 @@ public struct MushafView: View {
             selectedVerse: $viewModel.selectedVerse,
             onVerseLongPress: { verse in
                 viewModel.selectedVerse = nil
-
+                
                 if let handler = externalLongPressHandler {
                     highlightedVerseBinding?.wrappedValue = nil
                     handler(verse)
@@ -258,9 +263,9 @@ public struct MushafView: View {
 #Preview {
     NavigationStack {
         MushafView(initialPage: 2, highlightedVerse: nil)
-        #if os(iOS) || os(visionOS)
+#if os(iOS) || os(visionOS)
             .navigationBarTitleDisplayMode(.inline)
-        #endif
+#endif
     }
     .environmentObject(ReciterService.shared)
     .environmentObject(ToastManager())
