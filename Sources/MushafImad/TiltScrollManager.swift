@@ -80,6 +80,10 @@ public class TiltScrollManager: ObservableObject {
         scrollVelocity = 0
     }
     
+    public func activate() {
+        updateMonitoringState()
+    }
+    
     public func deactivate() {
         stopMonitoring()
     }
@@ -106,7 +110,6 @@ public class TiltScrollManager: ObservableObject {
     private func processMotion(_ motion: CMDeviceMotion) {
         
         let pitch = motion.attitude.pitch
-        let degrees = pitch * 180 / .pi
         
         var targetVelocity: CGFloat = 0
         let centerAngle = 25.0 * .pi / 180.0
