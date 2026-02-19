@@ -43,11 +43,15 @@ public class TiltScrollManager: ObservableObject {
         self.scrollView = scrollView
     }
     
+    private var isMonitoring = false
+    
     private func updateMonitoringState() {
-        if isEnabled {
+        if isEnabled, !isMonitoring {
             startMonitoring()
-        } else {
+            isMonitoring = true
+        } else if !isEnabled, isMonitoring {
             stopMonitoring()
+            isMonitoring = false
         }
     }
     
