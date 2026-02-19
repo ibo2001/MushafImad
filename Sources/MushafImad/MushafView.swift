@@ -75,8 +75,10 @@ public struct MushafView: View {
     @Environment(\.dismiss) private var dismiss
     @State private var playingVerse: Verse? = nil
     
+    @StateObject private var tiltManager = TiltScrollManager()
+    
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
-    @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
+    @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .automatic
     
     
     public init(initialPage: Int? = nil,
@@ -162,6 +164,8 @@ public struct MushafView: View {
             ?? highlightedVerseBinding?.wrappedValue
             ?? staticHighlightedVerse
         
+        let _ = print("[MushafView] Building pageView. Mode: \(scrollingMode)")
+
         Group {
             if scrollingMode == .horizontal {
                 horizontalPageView(currentHighlight: currentHighlight)
@@ -206,6 +210,12 @@ public struct MushafView: View {
                     }
                 }
                 .scrollTargetLayout()
+                .background(
+                     ScrollViewIntrospector { scrollView in
+                         print("[MushafView] ScrollViewIntrospector FOUND scrollview: \(scrollView)")
+                         tiltManager.setScrollView(scrollView)
+                     }
+                )
             }
             .scrollTargetBehavior(.paging)
             .scrollPosition(id: scrollBinding, anchor: .center)
