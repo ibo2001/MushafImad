@@ -160,7 +160,6 @@ public struct MushafView: View {
             tiltManager.activate()
 #endif
         }
-        // In MushafView.body:
         .onDisappear {
 #if canImport(UIKit)
             tiltManager.deactivate()
