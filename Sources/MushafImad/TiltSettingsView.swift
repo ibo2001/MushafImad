@@ -16,12 +16,12 @@ public struct TiltSettingsView: View {
     public var body: some View {
         Form {
             Section(header: Text("Tilt to Scroll")) {
-                Toggle("Enable Tilt Directing", isOn: $isEnabled)
+                Toggle("Enable Tilt Scrolling", isOn: $isEnabled)
                 
                 if isEnabled {
                     VStack(alignment: .leading) {
                         Text("Sensitivity")
-                        Slider(value: $sensitivity, in: 1...20, step: 0.5) {
+                        Slider(value: $sensitivity, in: 1...10, step: 0.5) {
                             Text("Sensitivity")
                         } minimumValueLabel: {
                             Text("Slow")
@@ -31,7 +31,7 @@ public struct TiltSettingsView: View {
                     }
                 }
                 
-                Text("Tilt your device forward or backward to scroll automatically. Hold flat to stop.")
+                Text("Tilt your device forward or backward to scroll automatically. Return to a neutral reading angle (~25°) to stop.")
                     .font(.footnote)
                     .foregroundStyle(.secondary)
             }
