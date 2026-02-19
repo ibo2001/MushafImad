@@ -209,7 +209,7 @@ public class TiltScrollManager: ObservableObject {
         // scrollView.isDragging might be true if user is holding it.
         // We should pause if user is interacting.
         if scrollView.isDragging || scrollView.isTracking {
-             // print("[TiltScrollManager] ScrollView is user-interacting")
+              print("[TiltScrollManager] ScrollView is user-interacting")
             return
         }
         
