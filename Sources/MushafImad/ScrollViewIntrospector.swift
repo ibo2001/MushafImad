@@ -7,10 +7,10 @@
 
 import SwiftUI
 import UIKit
-
-/// A helper view that finds the nearest ancestor UIScrollView and passes it to a completion handler.
+#if canImport(UIKit)/// A helper view that finds the nearest ancestor UIScrollView and passes it to a completion handler.
 struct ScrollViewIntrospector: UIViewRepresentable {
     let onFind: (UIScrollView) -> Void
+    class Coordinator { var didFind = false }
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -19,14 +19,14 @@ struct ScrollViewIntrospector: UIViewRepresentable {
         return view
     }
     
+    func makeCoordinator() -> Coordinator { Coordinator() }
+    
     func updateUIView(_ uiView: UIView, context: Context) {
-        // Dispatch async to ensure view hierarchy is engaged
+        guard !context.coordinator.didFind else { return }
         DispatchQueue.main.async {
             if let scrollView = self.findAncestorScrollView(of: uiView) {
-                print("[ScrollViewIntrospector] Found UIScrollView: \(scrollView)")
+                context.coordinator.didFind = true
                 onFind(scrollView)
-            } else {
-                print("[ScrollViewIntrospector] Could not find ancestor UIScrollView")
             }
         }
     }
@@ -42,3 +42,4 @@ struct ScrollViewIntrospector: UIViewRepresentable {
         return nil
     }
 }
+#endif
