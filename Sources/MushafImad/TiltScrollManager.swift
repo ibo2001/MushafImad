@@ -72,7 +72,7 @@ public class TiltScrollManager: ObservableObject {
             guard let self = self, let motion = motion else {
                 return
             }
-            Task { @MainActor [weak self] in
+            MainActor.assumeIsolated { [weak self] in
                 guard let self else { return }
                 self.processMotion(motion)
             }
@@ -147,7 +147,7 @@ public class TiltScrollManager: ObservableObject {
         }
     }
     
-    @objc private func updateScrollPosition() {
+    private func updateScrollPosition() {
         guard let scrollView = scrollView else {
             // print("[TiltScrollManager] No ScrollView to scroll")
             return
