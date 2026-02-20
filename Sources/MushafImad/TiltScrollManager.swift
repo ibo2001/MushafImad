@@ -12,6 +12,11 @@ import Combine
 /// Manages the tilt-to-scroll functionality using CoreMotion.
 @MainActor
 public class TiltScrollManager: ObservableObject {
+    public enum ScrollAxis {
+        case vertical
+        case horizontal
+    }
+
     private let motionManager = CMMotionManager()
     private var displayLink: CADisplayLink?
     private var settingsCancellable: AnyCancellable?
@@ -25,9 +30,9 @@ public class TiltScrollManager: ObservableObject {
     @AppStorage("tilt_sensitivity") public var sensitivity: Double = 5.0
     
     private weak var scrollView: UIScrollView?
+    private var scrollAxis: ScrollAxis = .horizontal
     
     private var scrollVelocity: CGFloat = 0
-    private let deadZone: Double = 5.0 * .pi / 180.0
     
     public init() {
         settingsCancellable = NotificationCenter.default
@@ -42,21 +47,23 @@ public class TiltScrollManager: ObservableObject {
     public func setScrollView(_ scrollView: UIScrollView) {
         self.scrollView = scrollView
     }
+
+    public func setScrollAxis(_ axis: ScrollAxis) {
+        scrollAxis = axis
+    }
     
     private var isMonitoring = false
     
     private func updateMonitoringState() {
         if isEnabled, !isMonitoring {
             startMonitoring()
-            isMonitoring = true
         } else if !isEnabled, isMonitoring {
             stopMonitoring()
-            isMonitoring = false
         }
     }
     
     private func startMonitoring() {
-        guard motionManager.isDeviceMotionAvailable else {
+        guard !isMonitoring, motionManager.isDeviceMotionAvailable else {
             return
         }
         
@@ -67,21 +74,19 @@ public class TiltScrollManager: ObservableObject {
             }
             Task { @MainActor [weak self] in
                 guard let self else { return }
-                if Int(motion.timestamp * 10) % 20 == 0 {
-                    let p = motion.attitude.pitch * 180 / .pi
-                    print("[TiltScrollManager] Pitch: \(String(format: "%.1f", p))°")
-                }
                 self.processMotion(motion)
             }
         }
         
         startDisplayLink()
+        isMonitoring = true
     }
     
     private func stopMonitoring() {
         motionManager.stopDeviceMotionUpdates()
         stopDisplayLink()
         scrollVelocity = 0
+        isMonitoring = false
     }
     
     public func activate() {
@@ -90,6 +95,7 @@ public class TiltScrollManager: ObservableObject {
     
     public func deactivate() {
         stopMonitoring()
+        isMonitoring = false
     }
     
     private final class DisplayLinkProxy: NSObject {
@@ -112,20 +118,21 @@ public class TiltScrollManager: ObservableObject {
     }
     
     private func processMotion(_ motion: CMDeviceMotion) {
-        
         let pitch = motion.attitude.pitch
-        
+        let roll = motion.attitude.roll
+        let tiltAngle = (scrollAxis == .vertical) ? pitch : roll
         var targetVelocity: CGFloat = 0
-        let centerAngle = 25.0 * .pi / 180.0
-        let tolerance = 10.0 * .pi / 180.0 // +/- 10 degrees deadzone
+        let centerAngle = (scrollAxis == .vertical) ? 25.0 * .pi / 180.0 : 0.0
+        let tolerance = (scrollAxis == .vertical) ? 10.0 * .pi / 180.0 : 6.0 * .pi / 180.0
+        let scale = (scrollAxis == .vertical) ? 50.0 : 80.0
         
         
-        if pitch > (centerAngle + tolerance) {
-            let delta = pitch - (centerAngle + tolerance)
-            targetVelocity = CGFloat(delta * sensitivity * 50.0) // Scaling factor
-        } else if pitch < (centerAngle - tolerance) {
-            let delta = (centerAngle - tolerance) - pitch
-            targetVelocity = -CGFloat(delta * sensitivity * 50.0)
+        if tiltAngle > (centerAngle + tolerance) {
+            let delta = tiltAngle - (centerAngle + tolerance)
+            targetVelocity = CGFloat(delta * sensitivity * scale)
+        } else if tiltAngle < (centerAngle - tolerance) {
+            let delta = (centerAngle - tolerance) - tiltAngle
+            targetVelocity = -CGFloat(delta * sensitivity * scale)
         } else {
             // print("[TiltScrollManager] Action: NONE (Deadzone)")
         }
@@ -156,17 +163,29 @@ public class TiltScrollManager: ObservableObject {
         }
         
         // print("[TiltScrollManager] Scrolling by \(scrollVelocity)")
-        
-        let newOffset = CGPoint(
-            x: scrollView.contentOffset.x,
-            y: scrollView.contentOffset.y + scrollVelocity
-        )
-        
-        let maxOffsetY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
-        let clampedY = max(0, min(newOffset.y, maxOffsetY))
-        
-        if clampedY != scrollView.contentOffset.y {
-            scrollView.setContentOffset(CGPoint(x: newOffset.x, y: clampedY), animated: false)
+
+        if scrollAxis == .vertical {
+            let newOffset = CGPoint(
+                x: scrollView.contentOffset.x,
+                y: scrollView.contentOffset.y + scrollVelocity
+            )
+            let maxOffsetY = max(0, scrollView.contentSize.height - scrollView.bounds.height)
+            let clampedY = max(0, min(newOffset.y, maxOffsetY))
+
+            if clampedY != scrollView.contentOffset.y {
+                scrollView.setContentOffset(CGPoint(x: newOffset.x, y: clampedY), animated: false)
+            }
+        } else {
+            let newOffset = CGPoint(
+                x: scrollView.contentOffset.x + scrollVelocity,
+                y: scrollView.contentOffset.y
+            )
+            let maxOffsetX = max(0, scrollView.contentSize.width - scrollView.bounds.width)
+            let clampedX = max(0, min(newOffset.x, maxOffsetX))
+
+            if clampedX != scrollView.contentOffset.x {
+                scrollView.setContentOffset(CGPoint(x: clampedX, y: newOffset.y), animated: false)
+            }
         }
     }
 }
