@@ -96,7 +96,7 @@ private struct ActivePlayerContent: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
-                .disabled(player.isLoading)
+                .disabled(player.isLoading || !player.canSeekToPrevious)
 
                 Button(action: player.togglePlayback) {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -110,7 +110,7 @@ private struct ActivePlayerContent: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
-                .disabled(player.isLoading)
+                .disabled(player.isLoading || !player.canSeekToNext)
             }
             .foregroundColor(.brand900)
             .environment(\.layoutDirection, .leftToRight)
