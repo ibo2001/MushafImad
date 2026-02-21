@@ -61,13 +61,11 @@ public final class RealmService {
         switch sourceConfiguration {
         case .bundled:
             guard let bundledRealmURL = Bundle.mushafResources.url(forResource: "quran", withExtension: "realm") else {
-                throw NSError(domain: "RealmService", code: 1,
-                             userInfo: [NSLocalizedDescriptionKey: "Could not find quran.realm in bundle"])
+                throw RealmServiceError.bundleNotFound
             }
             let fileManager = FileManager.default
             guard let appSupportURL = fileManager.urls(for: .applicationSupportDirectory, in: .userDomainMask).first else {
-                throw NSError(domain: "RealmService", code: 2,
-                             userInfo: [NSLocalizedDescriptionKey: "Could not access Application Support directory"])
+                throw RealmServiceError.appSupportUnavailable
             }
             try fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
             let writableRealmURL = appSupportURL.appendingPathComponent("quran.realm")
@@ -107,7 +105,13 @@ public final class RealmService {
             fileURL: fileURL,
             schemaVersion: currentSchemaVersion,
             migrationBlock: { _, oldSchemaVersion in
-                if oldSchemaVersion < currentSchemaVersion {}
+                // No explicit migration logic is needed here. The bundled Realm is
+                // always distributed schema-matched, and Realm's automatic lightweight
+                // migration handles new properties (zeroed) and removed properties
+                // (dropped). If you add non-optional properties or need data
+                // transformations in a future schema version, add explicit migration
+                // logic inside this block conditioned on `oldSchemaVersion`.
+                _ = oldSchemaVersion
             }
         )
     }
@@ -123,8 +127,7 @@ public final class RealmService {
     public func fetchAllChaptersAsync() async throws -> [Chapter] {
         try initialize()
         guard let realmConfig else {
-            throw NSError(domain: "RealmService", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Realm configuration unavailable"])
+            throw RealmServiceError.configurationUnavailable
         }
         return try await withCheckedThrowingContinuation { continuation in
             let config = realmConfig
@@ -290,8 +293,7 @@ public final class RealmService {
     public func fetchAllPartsAsync() async throws -> [Part] {
         try initialize()
         guard let realmConfig else {
-            throw NSError(domain: "RealmService", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Realm configuration unavailable"])
+            throw RealmServiceError.configurationUnavailable
         }
         return try await withCheckedThrowingContinuation { continuation in
             let config = realmConfig
@@ -334,8 +336,7 @@ public final class RealmService {
     public func fetchAllQuartersAsync() async throws -> [Quarter] {
         try initialize()
         guard let realmConfig else {
-            throw NSError(domain: "RealmService", code: 3,
-                          userInfo: [NSLocalizedDescriptionKey: "Realm configuration unavailable"])
+            throw RealmServiceError.configurationUnavailable
         }
         return try await withCheckedThrowingContinuation { continuation in
             let config = realmConfig
@@ -447,6 +448,24 @@ public final class RealmService {
         }
         
         return sajdaVerses
+    }
+}
+
+/// Errors thrown by `RealmService` operations.
+public enum RealmServiceError: Error, LocalizedError {
+    /// The Realm configuration was not set up before an async operation was attempted.
+    case configurationUnavailable
+    /// The bundled `quran.realm` file could not be located in the package resources.
+    case bundleNotFound
+    /// The Application Support directory could not be accessed on this device.
+    case appSupportUnavailable
+
+    public var errorDescription: String? {
+        switch self {
+        case .configurationUnavailable: return "Realm configuration unavailable"
+        case .bundleNotFound: return "Could not find quran.realm in bundle"
+        case .appSupportUnavailable: return "Could not access Application Support directory"
+        }
     }
 }
 

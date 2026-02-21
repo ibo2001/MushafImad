@@ -126,8 +126,12 @@ public final class ReciterService: ObservableObject {
     /// Use this initializer to supply a custom reciter list — for example, a curated subset,
     /// a different audio server, or test data — without touching the bundled manifest.
     ///
-    /// - Note: The `selectedReciterId` key in `UserDefaults` is still written when
-    ///   `selectReciter(_:)` is called. This is a known limitation for isolated instances.
+    /// - Note: Calling `selectReciter(_:)` on an isolated instance writes to
+    ///   `UserDefaults.standard["selectedReciterId"]`, which is shared process-wide.
+    ///   This means isolated instances (e.g., in tests) can contaminate the key and
+    ///   alter `ReciterService.shared`'s initial selection on next launch.
+    ///   Perform `UserDefaults.standard.removeObject(forKey: "selectedReciterId")`
+    ///   in test teardown when using isolated instances that call `selectReciter(_:)`.
     ///
     /// - Parameter reciters: The reciters to expose. They are sorted by `id` ascending.
     public init(reciters: [ReciterInfo]) {
@@ -142,12 +146,12 @@ public final class ReciterService: ObservableObject {
         
         let reciterIds = Bundle.mushafResources.reciterIds()
         if !reciterIds.isEmpty {
-            AppLogger.shared.info("ReciterService: Loaded \(reciterIds.count) reciter IDs from manifest", category: .network)
+            AppLogger.shared.info("ReciterService: Loaded \(reciterIds.count) reciter IDs from manifest", category: .app)
         }
         
         // If manifest loading failed, there's no fallback for IDs
         guard !reciterIds.isEmpty else {
-            AppLogger.shared.error("ReciterService: No reciter IDs available", category: .network)
+            AppLogger.shared.error("ReciterService: No reciter IDs available", category: .app)
             self.isLoading = false
             return
         }
@@ -170,7 +174,7 @@ public final class ReciterService: ObservableObject {
         
         // If no reciters loaded from JSON, use the embedded data as fallback
         if !loadedFromJSON {
-            AppLogger.shared.warn("ReciterService: No reciters loaded from JSON files, using embedded fallback data", category: .network)
+            AppLogger.shared.warn("ReciterService: No reciters loaded from JSON files, using embedded fallback data", category: .app)
             for reciterData in ReciterDataProvider.reciters {
                 let info = ReciterInfo(
                     id: reciterData.id,
@@ -188,21 +192,21 @@ public final class ReciterService: ObservableObject {
         
         self.availableReciters = reciters
         
-        AppLogger.shared.info("ReciterService: Loaded \(reciters.count) reciters", category: .network)
+        AppLogger.shared.info("ReciterService: Loaded \(reciters.count) reciters", category: .app)
         
         // Load saved reciter from AppStorage or use first available as default
         if savedReciterId > 0, let saved = reciters.first(where: { $0.id == savedReciterId }) {
             self.selectedReciter = saved
-            AppLogger.shared.info("ReciterService: Selected saved reciter: \(saved.displayName) (ID: \(saved.id))", category: .network)
+            AppLogger.shared.info("ReciterService: Selected saved reciter: \(saved.displayName) (ID: \(saved.id))", category: .app)
         } else if let firstReciter = reciters.first {
             // Set first reciter as default
             self.selectedReciter = firstReciter
             self.savedReciterId = firstReciter.id
-            AppLogger.shared.info("ReciterService: Selected default reciter: \(firstReciter.displayName) (ID: \(firstReciter.id))", category: .network)
+            AppLogger.shared.info("ReciterService: Selected default reciter: \(firstReciter.displayName) (ID: \(firstReciter.id))", category: .app)
         }
         
         if let selectedReciter = self.selectedReciter {
-            AppLogger.shared.info("ReciterService: Audio base URL: \(selectedReciter.folderURL)", category: .network)
+            AppLogger.shared.info("ReciterService: Audio base URL: \(selectedReciter.folderURL)", category: .app)
         }
         
         self.isLoading = false
