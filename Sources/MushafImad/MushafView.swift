@@ -158,19 +158,17 @@ public struct MushafView: View {
         .environment(\.colorScheme, readingTheme == .night ? .dark : .light)
         .opacity(viewModel.contentOpacity)
         .onChange(of: viewModel.scrollPosition) { oldPage, newPage in
-            guard let newPage = newPage else { return }
-
+            guard let newPage else { return }
             Task {
                 await viewModel.handlePageChange(from: oldPage, to: newPage)
+            }
+            if externalPageBinding?.wrappedValue != newPage {
+                externalPageBinding?.wrappedValue = newPage
             }
         }
         .onChange(of: externalPageBinding?.wrappedValue) { _, newPage in
             guard let newPage, newPage != viewModel.scrollPosition else { return }
             viewModel.scrollPosition = newPage
-        }
-        .onChange(of: viewModel.scrollPosition) { _, scrollPos in
-            guard let scrollPos, externalPageBinding?.wrappedValue != scrollPos else { return }
-            externalPageBinding?.wrappedValue = scrollPos
         }
         .task {
             let startPage = externalPageBinding?.wrappedValue ?? initialPage

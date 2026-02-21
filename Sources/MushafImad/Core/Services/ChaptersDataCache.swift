@@ -25,12 +25,21 @@ public final class ChaptersDataCache {
     public private(set) var isTypeCached = false
     
     private init() {}
+
+    // Tracks which RealmService last populated this cache so we can
+    // invalidate when a different service instance is used.
+    private var populatingServiceID: ObjectIdentifier?
     
     /// Load and cache chapters data only (with progressive loading callback)
     /// Grouped data is loaded on-demand via separate methods
     public func loadAndCache(using service: RealmService = .shared, onBatchLoaded: ((Int) -> Void)? = nil) async throws {
-        if isCached && !allChapters.isEmpty {
+        let incomingID = ObjectIdentifier(service)
+        if isCached && !allChapters.isEmpty && populatingServiceID == incomingID {
             return
+        }
+        // Different service instance — invalidate stale cache before reloading.
+        if populatingServiceID != incomingID {
+            clearCache()
         }
 
         let chapters = try await service.fetchAllChaptersAsync()
@@ -40,11 +49,12 @@ public final class ChaptersDataCache {
         onBatchLoaded?(allChapters.count)
         
         isCached = true
+        populatingServiceID = incomingID
     }
     
     /// Load and cache parts grouping (lazy-loaded) - directly from Parts in database
     public func loadPartsGrouping(using service: RealmService = .shared) async throws {
-        guard !isPartsCached else { return }
+        guard !isPartsCached || populatingServiceID != ObjectIdentifier(service) else { return }
         let parts = try await service.fetchAllPartsAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
@@ -77,7 +87,7 @@ public final class ChaptersDataCache {
     
     /// Load and cache quarters grouping (lazy-loaded) - directly from Quarters in database
     public func loadQuartersGrouping(using service: RealmService = .shared) async throws {
-        guard !isHizbCached else { return }
+        guard !isHizbCached || populatingServiceID != ObjectIdentifier(service) else { return }
         let quarters = try await service.fetchAllQuartersAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
@@ -194,6 +204,7 @@ public final class ChaptersDataCache {
         isPartsCached = false
         isHizbCached = false
         isTypeCached = false
+        populatingServiceID = nil
     }
 }
 

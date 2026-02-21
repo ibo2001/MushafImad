@@ -70,20 +70,8 @@ public final class AyahTimingService {
         return reciterTimings[id]
     }
     
-    private func loadReciterIdsFromManifest() -> [Int] {
-        guard let url = Bundle.mushafResources.url(forResource: "reciters_manifest", withExtension: "json") else {
-            return []
-        }
-        struct Entry: Codable { let id: Int }
-        guard let data = try? Data(contentsOf: url),
-              let entries = try? JSONDecoder().decode([Entry].self, from: data) else {
-            return []
-        }
-        return entries.map { $0.id }
-    }
-
     public func getAllAvailableReciters() -> [ReciterTiming] {
-        return loadReciterIdsFromManifest().compactMap { getReciter(id: $0) }
+        return Bundle.mushafResources.reciterIds().compactMap { getReciter(id: $0) }
     }
     
     /// Get the current verse number based on playback time (in milliseconds)

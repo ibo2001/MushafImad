@@ -9,7 +9,7 @@ import Foundation
 import RealmSwift
 
 /// Describes how `RealmService` opens its Realm database.
-public enum RealmConfiguration {
+public enum MushafRealmConfiguration {
     /// Uses the bundled `quran.realm` file, copying it to Application Support on first run.
     case bundled
     /// Opens a consumer-supplied Realm file directly. No file copying is performed.
@@ -25,13 +25,27 @@ public final class RealmService {
     
     private var realm: Realm?
     private var realmConfig: Realm.Configuration?
-    private let sourceConfiguration: RealmConfiguration
+    private let sourceConfiguration: MushafRealmConfiguration
 
     private init() {
         self.sourceConfiguration = .bundled
     }
 
-    public init(configuration: RealmConfiguration) {
+    /// Creates a `RealmService` that opens its database using the given configuration.
+    ///
+    /// Call `try initialize()` before invoking any synchronous data-access methods
+    /// (`getAllChapters()`, `getPage(number:)`, `getTotalPages()`, etc.).
+    /// The async fetch methods (`fetchPageAsync`, `fetchAllChaptersAsync`, etc.)
+    /// call `initialize()` automatically, but synchronous accessors return `nil`
+    /// or fallback values if the database has not been opened yet.
+    ///
+    /// Example:
+    /// ```swift
+    /// let service = RealmService(configuration: .inMemory)
+    /// try service.initialize()
+    /// // Now safe to call synchronous accessors
+    /// ```
+    public init(configuration: MushafRealmConfiguration) {
         self.sourceConfiguration = configuration
     }
     
@@ -53,29 +67,17 @@ public final class RealmService {
             }
             try fileManager.createDirectory(at: appSupportURL, withIntermediateDirectories: true)
             let writableRealmURL = appSupportURL.appendingPathComponent("quran.realm")
+            // The bundled realm is copied only on first run; subsequent schema updates
+            // in the bundle won't propagate to existing installs.
             if !fileManager.fileExists(atPath: writableRealmURL.path) {
                 try fileManager.copyItem(at: bundledRealmURL, to: writableRealmURL)
             }
-            var config = Realm.Configuration(
-                fileURL: writableRealmURL,
-                schemaVersion: 24,
-                migrationBlock: { _, oldSchemaVersion in
-                    if oldSchemaVersion < 24 {}
-                }
-            )
-            config.readOnly = false
+            let config = RealmService.makeFileRealmConfiguration(fileURL: writableRealmURL)
             realmConfig = config
             realm = try Realm(configuration: config)
 
         case .custom(let url):
-            var config = Realm.Configuration(
-                fileURL: url,
-                schemaVersion: 24,
-                migrationBlock: { _, oldSchemaVersion in
-                    if oldSchemaVersion < 24 {}
-                }
-            )
-            config.readOnly = false
+            let config = RealmService.makeFileRealmConfiguration(fileURL: url)
             realmConfig = config
             realm = try Realm(configuration: config)
 
@@ -92,6 +94,18 @@ public final class RealmService {
     /// Check if Realm is initialized
     public var isInitialized: Bool {
         return realm != nil
+    }
+
+    private static func makeFileRealmConfiguration(fileURL: URL) -> Realm.Configuration {
+        var config = Realm.Configuration(
+            fileURL: fileURL,
+            schemaVersion: 24,
+            migrationBlock: { _, oldSchemaVersion in
+                if oldSchemaVersion < 24 {}
+            }
+        )
+        config.readOnly = false
+        return config
     }
     
     // MARK: - Chapter (Surah) Operations

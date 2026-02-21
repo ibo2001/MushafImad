@@ -38,6 +38,7 @@ extension MushafView {
         
         // Cache flag to prevent reloading on every view appearance
         private var hasLoadedData = false
+        private var cachedTotalPages: Int = 0
         
         // Services
         private let realmService: RealmService
@@ -74,7 +75,7 @@ extension MushafView {
         }
         
         public var totalPages: Int {
-            realmService.getTotalPages()
+            cachedTotalPages > 0 ? cachedTotalPages : realmService.getTotalPages()
         }
 
         // MARK: - Data Loading
@@ -101,6 +102,7 @@ extension MushafView {
                 updateCurrentChapter(for: currentPage)
                 
                 // Mark data as loaded to prevent reloading
+                cachedTotalPages = realmService.getTotalPages()
                 hasLoadedData = true
                 isLoading = false
             } catch {
@@ -140,7 +142,7 @@ extension MushafView {
         }
         
         public func nextPage() {
-            guard currentPage < realmService.getTotalPages() else { return }
+            guard currentPage < totalPages else { return }
             currentPage += 1
         }
         
@@ -150,7 +152,7 @@ extension MushafView {
         }
         
         public func goToPage(_ page: Int) {
-            guard page >= 1 && page <= realmService.getTotalPages() else { return }
+            guard page >= 1 && page <= totalPages else { return }
             currentPage = page
         }
         
