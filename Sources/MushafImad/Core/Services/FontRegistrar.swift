@@ -23,12 +23,24 @@ public enum FontRegistrar {
         "Al-QuranAlKareem Regular.ttf"
     ]
     
-    public static func registerFontsIfNeeded() {
+    public static func registerFontsIfNeeded(additionalURLs: [URL] = []) {
         for fileName in fontFileNames {
             registerFontIfNeeded(named: fileName)
         }
+        for url in additionalURLs {
+            registerFont(at: url)
+        }
     }
-    
+
+    private static func registerFont(at url: URL) {
+        var error: Unmanaged<CFError>?
+        let success = CTFontManagerRegisterFontsForURL(url as CFURL, .process, &error)
+        if !success, let error = error?.takeUnretainedValue() {
+            let description = CFErrorCopyDescription(error) as String
+            AppLogger.shared.debug("Font registration skipped for \(url.lastPathComponent): \(description)", category: .ui)
+        }
+    }
+
     private static func registerFontIfNeeded(named fileName: String) {
         let components = splitFileName(fileName)
         let searchDirectories: [String?] = [

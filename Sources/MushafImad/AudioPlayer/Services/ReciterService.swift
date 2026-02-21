@@ -120,7 +120,23 @@ public final class ReciterService: ObservableObject {
         // Load synchronously on main thread to ensure it's ready
         loadAvailableRecitersSync()
     }
-    
+
+    /// Creates an isolated `ReciterService` pre-loaded with the provided reciters.
+    ///
+    /// Use this initializer to supply a custom reciter list — for example, a curated subset,
+    /// a different audio server, or test data — without touching the bundled manifest.
+    ///
+    /// - Note: The `selectedReciterId` key in `UserDefaults` is still written when
+    ///   `selectReciter(_:)` is called. This is a known limitation for isolated instances.
+    ///
+    /// - Parameter reciters: The reciters to expose. They are sorted by `id` ascending.
+    public init(reciters: [ReciterInfo]) {
+        let sorted = reciters.sorted { $0.id < $1.id }
+        self.availableReciters = sorted
+        self.selectedReciter = sorted.first
+        self.isLoading = false
+    }
+
     /// Simple struct for decoding reciter IDs from the manifest JSON.
     private struct ReciterManifestEntry: Codable {
         let id: Int

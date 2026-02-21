@@ -15,6 +15,24 @@ public struct ChaptersByPart: Identifiable {
     public let chapters: [Chapter]
     public let firstPage: Int?
     public let firstVerse: Verse?
+
+    public init(
+        id: Int,
+        partNumber: Int,
+        arabicTitle: String,
+        englishTitle: String,
+        chapters: [Chapter],
+        firstPage: Int?,
+        firstVerse: Verse?
+    ) {
+        self.id = id
+        self.partNumber = partNumber
+        self.arabicTitle = arabicTitle
+        self.englishTitle = englishTitle
+        self.chapters = chapters
+        self.firstPage = firstPage
+        self.firstVerse = firstVerse
+    }
 }
 
 public struct ChaptersByQuarter: Identifiable {
@@ -27,13 +45,41 @@ public struct ChaptersByQuarter: Identifiable {
     public let chapters: [Chapter]
     public let firstPage: Int?
     public let firstVerse: Verse?
+
+    public init(
+        id: Int,
+        quarterNumber: Int,
+        hizbNumber: Int,
+        hizbFraction: Int,
+        arabicTitle: String,
+        englishTitle: String,
+        chapters: [Chapter],
+        firstPage: Int?,
+        firstVerse: Verse?
+    ) {
+        self.id = id
+        self.quarterNumber = quarterNumber
+        self.hizbNumber = hizbNumber
+        self.hizbFraction = hizbFraction
+        self.arabicTitle = arabicTitle
+        self.englishTitle = englishTitle
+        self.chapters = chapters
+        self.firstPage = firstPage
+        self.firstVerse = firstVerse
+    }
 }
 
 public struct ChaptersByHizb: Identifiable {
     public let id: Int
     public let hizbNumber: Int
     public let quarters: [ChaptersByQuarter]
-    
+
+    public init(id: Int, hizbNumber: Int, quarters: [ChaptersByQuarter]) {
+        self.id = id
+        self.hizbNumber = hizbNumber
+        self.quarters = quarters
+    }
+
     public var hizbTitle: String {
         hizbNumber.quarterTitle
     }
@@ -46,7 +92,23 @@ public struct ChaptersByType: Identifiable {
     public let chapters: [Chapter]
     public let firstPage: Int?
     public let firstVerse: Verse?
-    
+
+    public init(
+        id: String,
+        type: String,
+        arabicType: String,
+        chapters: [Chapter],
+        firstPage: Int?,
+        firstVerse: Verse?
+    ) {
+        self.id = id
+        self.type = type
+        self.arabicType = arabicType
+        self.chapters = chapters
+        self.firstPage = firstPage
+        self.firstVerse = firstVerse
+    }
+
     public var isMeccan: Bool {
         id == "meccan"
     }

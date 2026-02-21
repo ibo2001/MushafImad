@@ -64,10 +64,11 @@ public struct MushafView: View {
     public let initialPage: Int?
     private let staticHighlightedVerse: Verse?
     private let highlightedVerseBinding: Binding<Verse?>?
+    private let externalPageBinding: Binding<Int>?
     private let externalLongPressHandler: ((Verse) -> Void)?
     private let externalPageTapHandler: (() -> Void)?
-    
-    @State private var viewModel = ViewModel()
+
+    @State private var viewModel: ViewModel
     @StateObject private var playerViewModel = QuranPlayerViewModel()
     @EnvironmentObject private var reciterService: ReciterService
     @EnvironmentObject private var toastManager: ToastManager
@@ -79,28 +80,68 @@ public struct MushafView: View {
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     
     
-    public init(initialPage: Int? = nil,
-                highlightedVerse: Verse? = nil,
-                onVerseLongPress: ((Verse) -> Void)? = nil,
-                onPageTap: (() -> Void)? = nil
+    public init(
+        initialPage: Int? = nil,
+        highlightedVerse: Verse? = nil,
+        realmService: RealmService = .shared,
+        onVerseLongPress: ((Verse) -> Void)? = nil,
+        onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.staticHighlightedVerse = highlightedVerse
         self.highlightedVerseBinding = nil
+        self.externalPageBinding = nil
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
+        _viewModel = State(initialValue: ViewModel(realmService: realmService))
     }
     
-    public init(initialPage: Int? = nil,
-                highlightedVerse: Binding<Verse?>,
-                onVerseLongPress: ((Verse) -> Void)? = nil,
-                onPageTap: (() -> Void)? = nil
+    public init(
+        initialPage: Int? = nil,
+        highlightedVerse: Binding<Verse?>,
+        realmService: RealmService = .shared,
+        onVerseLongPress: ((Verse) -> Void)? = nil,
+        onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.highlightedVerseBinding = highlightedVerse
         self.staticHighlightedVerse = nil
+        self.externalPageBinding = nil
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
+        _viewModel = State(initialValue: ViewModel(realmService: realmService))
+    }
+
+    public init(
+        page: Binding<Int>,
+        highlightedVerse: Verse? = nil,
+        realmService: RealmService = .shared,
+        onVerseLongPress: ((Verse) -> Void)? = nil,
+        onPageTap: (() -> Void)? = nil
+    ) {
+        self.initialPage = nil
+        self.externalPageBinding = page
+        self.staticHighlightedVerse = highlightedVerse
+        self.highlightedVerseBinding = nil
+        self.externalLongPressHandler = onVerseLongPress
+        self.externalPageTapHandler = onPageTap
+        _viewModel = State(initialValue: ViewModel(realmService: realmService))
+    }
+
+    public init(
+        page: Binding<Int>,
+        highlightedVerse: Binding<Verse?>,
+        realmService: RealmService = .shared,
+        onVerseLongPress: ((Verse) -> Void)? = nil,
+        onPageTap: (() -> Void)? = nil
+    ) {
+        self.initialPage = nil
+        self.externalPageBinding = page
+        self.highlightedVerseBinding = highlightedVerse
+        self.staticHighlightedVerse = nil
+        self.externalLongPressHandler = onVerseLongPress
+        self.externalPageTapHandler = onPageTap
+        _viewModel = State(initialValue: ViewModel(realmService: realmService))
     }
     
     public var body: some View {
@@ -118,13 +159,22 @@ public struct MushafView: View {
         .opacity(viewModel.contentOpacity)
         .onChange(of: viewModel.scrollPosition) { oldPage, newPage in
             guard let newPage = newPage else { return }
-            
+
             Task {
                 await viewModel.handlePageChange(from: oldPage, to: newPage)
             }
         }
+        .onChange(of: externalPageBinding?.wrappedValue) { _, newPage in
+            guard let newPage, newPage != viewModel.scrollPosition else { return }
+            viewModel.scrollPosition = newPage
+        }
+        .onChange(of: viewModel.scrollPosition) { _, scrollPos in
+            guard let scrollPos, externalPageBinding?.wrappedValue != scrollPos else { return }
+            externalPageBinding?.wrappedValue = scrollPos
+        }
         .task {
-            await viewModel.initializePageView(initialPage: initialPage)
+            let startPage = externalPageBinding?.wrappedValue ?? initialPage
+            await viewModel.initializePageView(initialPage: startPage)
         }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in
             // Clear highlighting when playback stops
@@ -174,7 +224,7 @@ public struct MushafView: View {
     
     public func horizontalPageView(currentHighlight: Verse?) -> some View {
         TabView(selection: $viewModel.scrollPosition) {
-            ForEach(1...604, id: \.self) { pageNumber in
+            ForEach(1...max(1, viewModel.totalPages), id: \.self) { pageNumber in
                 pageContent(for: pageNumber, highlight: currentHighlight)
                     .tag(pageNumber)
             }
@@ -197,7 +247,7 @@ public struct MushafView: View {
             
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
-                    ForEach(1...604, id: \.self) { pageNumber in
+                    ForEach(1...max(1, viewModel.totalPages), id: \.self) { pageNumber in
                         pageContent(for: pageNumber, highlight: currentHighlight)
                             .frame(width: geometry.size.width, height: geometry.size.height)
                             .padding(.top,geometry.safeAreaInsets.top)

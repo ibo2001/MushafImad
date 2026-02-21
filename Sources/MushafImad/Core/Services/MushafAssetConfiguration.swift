@@ -19,17 +19,22 @@ public struct MushafAssetConfiguration {
     public var imageBundle: Bundle?
     public var colorProvider: ((String) -> Color?)?
     public var imageProvider: ((String) -> Image?)?
-    
+    /// Additional font file URLs to register alongside the bundled Quran fonts.
+    /// Pass URLs to `.ttf` or `.otf` files in your host app bundle.
+    public var additionalFontURLs: [URL]
+
     public init(
         colorBundle: Bundle? = nil,
         imageBundle: Bundle? = nil,
         colorProvider: ((String) -> Color?)? = nil,
-        imageProvider: ((String) -> Image?)? = nil
+        imageProvider: ((String) -> Image?)? = nil,
+        additionalFontURLs: [URL] = []
     ) {
         self.colorBundle = colorBundle
         self.imageBundle = imageBundle
         self.colorProvider = colorProvider
         self.imageProvider = imageProvider
+        self.additionalFontURLs = additionalFontURLs
     }
 }
 
@@ -43,7 +48,15 @@ public enum MushafAssets {
     public static func reset() {
         configuration = MushafAssetConfiguration()
     }
-    
+
+    /// Registers bundled Quran fonts and any additional fonts supplied via ``MushafAssetConfiguration/additionalFontURLs``.
+    ///
+    /// Call this instead of `FontRegistrar.registerFontsIfNeeded()` when you want
+    /// host-app fonts to be registered in the same pass.
+    public static func registerFonts() {
+        FontRegistrar.registerFontsIfNeeded(additionalURLs: configuration.additionalFontURLs)
+    }
+
     /// Resolve a color asset using the override configuration or bundled default.
     public static func color(named name: String) -> Color {
         if let custom = configuration.colorProvider?(name) {

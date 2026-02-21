@@ -28,17 +28,12 @@ public final class ChaptersDataCache {
     
     /// Load and cache chapters data only (with progressive loading callback)
     /// Grouped data is loaded on-demand via separate methods
-    public func loadAndCache(onBatchLoaded: ((Int) -> Void)? = nil) async throws {
-        // Skip if already cached
+    public func loadAndCache(using service: RealmService = .shared, onBatchLoaded: ((Int) -> Void)? = nil) async throws {
         if isCached && !allChapters.isEmpty {
             return
         }
-        
-        
-        let realmService = RealmService.shared
-        
-        // Load chapters off the main actor to avoid blocking UI
-        let chapters = try await realmService.fetchAllChaptersAsync()
+
+        let chapters = try await service.fetchAllChaptersAsync()
         allChapters = chapters
                 
         // Notify that chapters are ready
@@ -48,13 +43,9 @@ public final class ChaptersDataCache {
     }
     
     /// Load and cache parts grouping (lazy-loaded) - directly from Parts in database
-    public func loadPartsGrouping() async throws {
-        guard !isPartsCached else {
-            return
-        }
-        
-        let realmService = RealmService.shared
-        let parts = try await realmService.fetchAllPartsAsync()
+    public func loadPartsGrouping(using service: RealmService = .shared) async throws {
+        guard !isPartsCached else { return }
+        let parts = try await service.fetchAllPartsAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
         let chaptersDict = Dictionary(uniqueKeysWithValues: allChapters.map { ($0.number, $0) })
@@ -85,13 +76,9 @@ public final class ChaptersDataCache {
     }
     
     /// Load and cache quarters grouping (lazy-loaded) - directly from Quarters in database
-    public func loadQuartersGrouping() async throws {
-        guard !isHizbCached else {
-            return
-        }
-        
-        let realmService = RealmService.shared
-        let quarters = try await realmService.fetchAllQuartersAsync()
+    public func loadQuartersGrouping(using service: RealmService = .shared) async throws {
+        guard !isHizbCached else { return }
+        let quarters = try await service.fetchAllQuartersAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
         let chaptersDict = Dictionary(uniqueKeysWithValues: allChapters.map { ($0.number, $0) })

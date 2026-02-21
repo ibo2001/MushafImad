@@ -40,7 +40,7 @@ extension MushafView {
         private var hasLoadedData = false
         
         // Services
-        private let realmService = RealmService.shared
+        private let realmService: RealmService
         private let dataCache = QuranDataCacheService.shared
         
         public var showReadingSetting:Bool = false
@@ -69,10 +69,14 @@ extension MushafView {
         }
         // MARK: - Initialization
         
-        public init() {
-            // Initialize with page 1
+        public init(realmService: RealmService = .shared) {
+            self.realmService = realmService
         }
         
+        public var totalPages: Int {
+            realmService.getTotalPages()
+        }
+
         // MARK: - Data Loading
         
         @MainActor
@@ -88,7 +92,7 @@ extension MushafView {
             do {
                 let cache = ChaptersDataCache.shared
                 if !cache.isCached {
-                    try await cache.loadAndCache()
+                    try await cache.loadAndCache(using: realmService)
                 }
                 chapters = cache.allChapters
                 
@@ -136,7 +140,7 @@ extension MushafView {
         }
         
         public func nextPage() {
-            guard currentPage < 604 else { return }
+            guard currentPage < realmService.getTotalPages() else { return }
             currentPage += 1
         }
         
@@ -146,7 +150,7 @@ extension MushafView {
         }
         
         public func goToPage(_ page: Int) {
-            guard page >= 1 && page <= 604 else { return }
+            guard page >= 1 && page <= realmService.getTotalPages() else { return }
             currentPage = page
         }
         
