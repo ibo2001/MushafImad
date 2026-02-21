@@ -37,7 +37,7 @@ public struct PlayerViewUI: View {
                             playerViewModel.configureIfNeeded(
                                 baseURL: baseURL,
                                 chapterNumber: target.number,
-                                chapterName: target.title,
+                                chapterName: target.displayTitle,
                                 reciterName: reciter.displayName,
                                 reciterId: reciter.id
                             )
