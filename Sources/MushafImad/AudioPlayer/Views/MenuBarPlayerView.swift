@@ -96,6 +96,7 @@ private struct ActivePlayerContent: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(localized: "Previous verse")))
                 .disabled(player.isLoading || !player.canSeekToPrevious)
 
                 Button(action: player.togglePlayback) {
@@ -103,6 +104,9 @@ private struct ActivePlayerContent: View {
                         .font(.system(size: 24))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(player.isPlaying
+                    ? String(localized: "Pause")
+                    : String(localized: "Play")))
                 .disabled(player.isLoading && !player.isPlaying)
 
                 Button { _ = player.seekToNextVerse() } label: {
@@ -110,6 +114,7 @@ private struct ActivePlayerContent: View {
                         .font(.system(size: 16))
                 }
                 .buttonStyle(.plain)
+                .accessibilityLabel(Text(String(localized: "Next verse")))
                 .disabled(player.isLoading || !player.canSeekToNext)
             }
             .foregroundColor(.brand900)
@@ -126,7 +131,7 @@ private struct ActivePlayerContent: View {
     private var playbackStateLabel: some View {
         switch player.playbackState {
         case .loading:
-            stateLabel(String(localized: "Loading…"), systemImage: "arrow.trianglehead.2.clockwise")
+            stateLabel(String(localized: "Loading…"), systemImage: "arrow.triangle.2.circlepath")
         case .paused:
             stateLabel(String(localized: "Paused"), systemImage: "pause.fill")
         case .playing:
