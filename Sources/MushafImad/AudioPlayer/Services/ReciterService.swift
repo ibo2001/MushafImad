@@ -140,7 +140,7 @@ public final class ReciterService: ObservableObject {
     private func loadAvailableRecitersSync() {
         var reciters: [ReciterInfo] = []
         
-        let reciterIds = Bundle.module.reciterIds()
+        let reciterIds = Bundle.mushafResources.reciterIds()
         if !reciterIds.isEmpty {
             AppLogger.shared.info("ReciterService: Loaded \(reciterIds.count) reciter IDs from manifest", category: .network)
         }

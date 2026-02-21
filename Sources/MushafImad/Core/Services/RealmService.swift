@@ -84,7 +84,7 @@ public final class RealmService {
         case .inMemory:
             let config = Realm.Configuration(
                 inMemoryIdentifier: "mushaf-\(UUID().uuidString)",
-                schemaVersion: 24
+                schemaVersion: RealmService.currentSchemaVersion
             )
             realmConfig = config
             realm = try Realm(configuration: config)
@@ -96,16 +96,16 @@ public final class RealmService {
         return realm != nil
     }
 
+    private static let currentSchemaVersion: UInt64 = 24
+
     private static func makeFileRealmConfiguration(fileURL: URL) -> Realm.Configuration {
-        var config = Realm.Configuration(
+        Realm.Configuration(
             fileURL: fileURL,
-            schemaVersion: 24,
+            schemaVersion: currentSchemaVersion,
             migrationBlock: { _, oldSchemaVersion in
-                if oldSchemaVersion < 24 {}
+                if oldSchemaVersion < currentSchemaVersion {}
             }
         )
-        config.readOnly = false
-        return config
     }
     
     // MARK: - Chapter (Surah) Operations

@@ -92,9 +92,7 @@ extension MushafView {
             
             do {
                 let cache = ChaptersDataCache.shared
-                if !cache.isCached {
-                    try await cache.loadAndCache(using: realmService)
-                }
+                try await cache.loadAndCache(using: realmService)
                 chapters = cache.allChapters
                 
                 // Warm up current page data so the first render is instant
