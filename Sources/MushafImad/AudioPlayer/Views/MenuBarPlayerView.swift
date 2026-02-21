@@ -34,7 +34,7 @@ public struct MenuBarPlayerView: View {
             Image(systemName: "waveform")
                 .font(.system(size: 24))
                 .foregroundStyle(.tertiary)
-            Text("No audio playing")
+            Text(String(localized: "No audio playing"))
                 .font(.system(size: 13))
                 .foregroundStyle(.secondary)
         }
@@ -56,7 +56,7 @@ private struct ActivePlayerContent: View {
                 Image(systemName: "music.quarternote.3")
                     .font(.caption)
                     .foregroundStyle(.secondary)
-                Text("Now Playing")
+                Text(String(localized: "Now Playing"))
                     .font(.caption)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -126,13 +126,13 @@ private struct ActivePlayerContent: View {
     private var playbackStateLabel: some View {
         switch player.playbackState {
         case .loading:
-            stateLabel("Loading…", systemImage: "arrow.trianglehead.2.clockwise")
+            stateLabel(String(localized: "Loading…"), systemImage: "arrow.trianglehead.2.clockwise")
         case .paused:
-            stateLabel("Paused", systemImage: "pause.fill")
+            stateLabel(String(localized: "Paused"), systemImage: "pause.fill")
         case .playing:
-            stateLabel("Playing", systemImage: "waveform")
+            stateLabel(String(localized: "Playing"), systemImage: "waveform")
         case .finished:
-            stateLabel("Finished", systemImage: "checkmark.circle.fill")
+            stateLabel(String(localized: "Finished"), systemImage: "checkmark.circle.fill")
         default:
             EmptyView()
         }
