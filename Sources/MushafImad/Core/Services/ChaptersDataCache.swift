@@ -30,8 +30,20 @@ public final class ChaptersDataCache {
     // invalidate when a different service instance is used.
     private var populatingServiceID: ObjectIdentifier?
     
-    /// Load and cache chapters data only (with progressive loading callback)
-    /// Grouped data is loaded on-demand via separate methods
+    /// Fetches all chapters from the given service, caches them, and notifies
+    /// the caller via `onBatchLoaded` when the full chapter list is ready.
+    ///
+    /// If the cache is already populated by the same `service` instance this
+    /// method returns immediately without making any database calls. Passing a
+    /// different `service` instance invalidates the cache automatically before
+    /// reloading.
+    ///
+    /// - Parameters:
+    ///   - service: The `RealmService` used to fetch chapter data. Defaults to
+    ///     `RealmService.shared`.
+    ///   - onBatchLoaded: Optional closure called once with the total number of
+    ///     cached chapters after the fetch completes.
+    /// - Throws: Any error thrown by the underlying `RealmService` fetch.
     public func loadAndCache(using service: RealmService = .shared, onBatchLoaded: ((Int) -> Void)? = nil) async throws {
         let incomingID = ObjectIdentifier(service)
         if isCached && !allChapters.isEmpty && populatingServiceID == incomingID {
@@ -52,7 +64,15 @@ public final class ChaptersDataCache {
         populatingServiceID = incomingID
     }
     
-    /// Load and cache parts grouping (lazy-loaded) - directly from Parts in database
+    /// Lazily loads and caches the chapters-by-juz' grouping from the database.
+    ///
+    /// This method is a no-op if the parts grouping is already cached for the
+    /// same `service` instance. Call ``loadAndCache(using:onBatchLoaded:)`` first
+    /// so that the chapter list is available for the grouping step.
+    ///
+    /// - Parameter service: The `RealmService` used to fetch part data. Defaults
+    ///   to `RealmService.shared`.
+    /// - Throws: Any error thrown by the underlying `RealmService` fetch.
     public func loadPartsGrouping(using service: RealmService = .shared) async throws {
         guard !isPartsCached || populatingServiceID != ObjectIdentifier(service) else { return }
         let parts = try await service.fetchAllPartsAsync()
@@ -85,7 +105,15 @@ public final class ChaptersDataCache {
         isPartsCached = true
     }
     
-    /// Load and cache quarters grouping (lazy-loaded) - directly from Quarters in database
+    /// Lazily loads and caches the chapters-by-hizb/quarter grouping from the database.
+    ///
+    /// This method is a no-op if the quarters grouping is already cached for the
+    /// same `service` instance. Call ``loadAndCache(using:onBatchLoaded:)`` first
+    /// so that the chapter list is available for the grouping step.
+    ///
+    /// - Parameter service: The `RealmService` used to fetch quarter data. Defaults
+    ///   to `RealmService.shared`.
+    /// - Throws: Any error thrown by the underlying `RealmService` fetch.
     public func loadQuartersGrouping(using service: RealmService = .shared) async throws {
         guard !isHizbCached || populatingServiceID != ObjectIdentifier(service) else { return }
         let quarters = try await service.fetchAllQuartersAsync()
@@ -154,7 +182,11 @@ public final class ChaptersDataCache {
         isHizbCached = true
     }
     
-    /// Load and cache types grouping (lazy-loaded) - simple sort by isMeccan
+    /// Builds the Meccan/Medinan chapter grouping from the already-cached chapter list.
+    ///
+    /// This method is synchronous and requires ``loadAndCache(using:onBatchLoaded:)``
+    /// to have completed successfully beforehand. It is a no-op when the type
+    /// grouping is already cached.
     public func loadTypesGrouping() {
         guard isCached, !allChapters.isEmpty else {
             return
@@ -194,7 +226,11 @@ public final class ChaptersDataCache {
         isTypeCached = true
     }
     
-    /// Clear cache (useful for testing or force refresh)
+    /// Resets all cached data and invalidates the service-identity record.
+    ///
+    /// After calling this method all `isCached` flags are `false` and every
+    /// cached collection is empty. The next call to any load method will
+    /// re-fetch data from the database.
     public func clearCache() {
         allChapters = []
         allChaptersByPart = []

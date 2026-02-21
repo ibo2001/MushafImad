@@ -60,16 +60,40 @@ public final class AyahTimingService {
         }
     }
     
+    /// Returns the start and end timestamps in milliseconds for the given verse.
+    ///
+    /// Timing data is loaded from the bundle on the first call for each reciter
+    /// and cached in memory for subsequent calls.
+    ///
+    /// - Parameters:
+    ///   - reciterId: The numeric ID of the reciter whose timing file to use.
+    ///   - surahId: The 1-based chapter (surah) number.
+    ///   - ayahId: The 1-based verse (ayah) number within the chapter.
+    /// - Returns: A tuple `(start:end:)` of millisecond offsets, or `nil` if
+    ///   the timing data is unavailable for the requested verse.
     public func getTiming(for reciterId: Int, surahId: Int, ayahId: Int) -> (start: Int, end: Int)? {
         loadTiming(for: reciterId)
         return timingMaps[reciterId]?[surahId]?[ayahId]
     }
     
+    /// Returns the full timing data for the given reciter ID, loading it from
+    /// the bundle on demand if not already cached.
+    ///
+    /// - Parameter id: The numeric ID of the reciter.
+    /// - Returns: The decoded `ReciterTiming` value, or `nil` if the
+    ///   corresponding JSON file cannot be found or decoded.
     public func getReciter(id: Int) -> ReciterTiming? {
         loadTiming(for: id)
         return reciterTimings[id]
     }
     
+    /// Returns timing data for all reciters listed in `reciters_manifest.json`.
+    ///
+    /// Each reciter's timing file is loaded on demand and cached for subsequent
+    /// calls. Reciters whose JSON files cannot be found or decoded are omitted
+    /// from the result.
+    ///
+    /// - Returns: An array of `ReciterTiming` values, one per available reciter.
     public func getAllAvailableReciters() -> [ReciterTiming] {
         return Bundle.mushafResources.reciterIds().compactMap { getReciter(id: $0) }
     }

@@ -61,6 +61,7 @@ public enum ScrollingMode: String, CaseIterable {
 /// The main Mushaf reader surface that stitches together page rendering,
 /// navigation and audio playback highlights.
 public struct MushafView: View {
+    /// The page number to open on first render; `nil` defers to the external page binding or page 1.
     public let initialPage: Int?
     private let staticHighlightedVerse: Verse?
     private let highlightedVerseBinding: Binding<Verse?>?
@@ -80,6 +81,7 @@ public struct MushafView: View {
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     
     
+    /// Designated initializer shared by all public overloads.
     private init(
         initialPage: Int?,
         externalPageBinding: Binding<Int>?,
@@ -98,6 +100,7 @@ public struct MushafView: View {
         _viewModel = State(initialValue: ViewModel(realmService: realmService))
     }
 
+    /// Creates a Mushaf reader that opens at an optional page with an optional static verse highlight.
     public init(
         initialPage: Int? = nil,
         highlightedVerse: Verse? = nil,
@@ -110,6 +113,7 @@ public struct MushafView: View {
                   realmService: realmService, onVerseLongPress: onVerseLongPress, onPageTap: onPageTap)
     }
 
+    /// Creates a Mushaf reader with a two-way binding for the highlighted verse.
     public init(
         initialPage: Int? = nil,
         highlightedVerse: Binding<Verse?>,
@@ -122,6 +126,7 @@ public struct MushafView: View {
                   realmService: realmService, onVerseLongPress: onVerseLongPress, onPageTap: onPageTap)
     }
 
+    /// Creates a Mushaf reader whose current page is controlled by the given binding.
     public init(
         page: Binding<Int>,
         highlightedVerse: Verse? = nil,
@@ -134,6 +139,7 @@ public struct MushafView: View {
                   realmService: realmService, onVerseLongPress: onVerseLongPress, onPageTap: onPageTap)
     }
 
+    /// Creates a Mushaf reader with external bindings for both the current page and the highlighted verse.
     public init(
         page: Binding<Int>,
         highlightedVerse: Binding<Verse?>,
@@ -223,6 +229,7 @@ public struct MushafView: View {
         .environment(\.layoutDirection, .rightToLeft)
     }
     
+    /// Renders pages in a horizontal tab-based pager.
     public func horizontalPageView(currentHighlight: Verse?) -> some View {
         TabView(selection: $viewModel.scrollPosition) {
             ForEach(1...max(1, viewModel.totalPages), id: \.self) { pageNumber in
@@ -236,6 +243,7 @@ public struct MushafView: View {
         #endif
     }
     
+    /// Renders pages in a vertical scroll view with page-snap behaviour.
     public func verticalPageView(currentHighlight: Verse?) -> some View {
         GeometryReader { geometry in
             let scrollBinding = Binding(
@@ -264,6 +272,7 @@ public struct MushafView: View {
         }
     }
     
+    /// Constructs the content view for a single page, wiring up verse tap and long-press handlers.
     public func pageContent(for pageNumber: Int, highlight: Verse?) -> some View {
         PageContainer(
             pageNumber: pageNumber,

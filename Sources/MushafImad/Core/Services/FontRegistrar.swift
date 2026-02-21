@@ -23,6 +23,14 @@ public enum FontRegistrar {
         "Al-QuranAlKareem Regular.ttf"
     ]
     
+    /// Registers all bundled Quran fonts with CoreText and any additional font
+    /// URLs supplied by the host app.
+    ///
+    /// Safe to call multiple times; CoreText skips fonts that are already
+    /// registered, so repeated calls are harmless.
+    ///
+    /// - Parameter additionalURLs: Extra font file URLs provided by the host
+    ///   app to register alongside the bundled fonts. Defaults to an empty array.
     public static func registerFontsIfNeeded(additionalURLs: [URL] = []) {
         for fileName in fontFileNames {
             registerFontIfNeeded(named: fileName)

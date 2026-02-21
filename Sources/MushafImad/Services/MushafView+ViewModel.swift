@@ -15,13 +15,19 @@ extension MushafView {
     /// coordinating cached Realm data with SwiftUI state.
     public final class ViewModel {
         // UI State
+        /// The verse currently presented in a modal sheet.
         public var presentedVerse: Verse?
-        public var selectedVerse: Verse?  // Track currently selected verse
-        public var tafsirVerse: Verse?  // Store verse for Tafsir sheet
+        /// The verse the user last tapped, shown with context actions.
+        public var selectedVerse: Verse?
+        /// The verse queued for Tafsir display.
+        public var tafsirVerse: Verse?
+        /// Whether the initial page has finished loading and is ready to render.
         public var isInitialPageReady = false
+        /// The page number the scroll view is currently anchored to.
         public var scrollPosition: Int?
         
         // Data State
+        /// The page number currently in view; triggers a background page load on change.
         public var currentPage: Int = 1 {
             didSet {
                 if currentPage != oldValue {
@@ -29,10 +35,15 @@ extension MushafView {
                 }
             }
         }
+        /// All chapters loaded from the Realm database.
         public var chapters: [Chapter] = []
+        /// The chapter that contains the current page.
         public var currentChapter: Chapter?
+        /// Whether the initial data load is in progress.
         public var isLoading = true
+        /// A human-readable description of any load failure.
         public var errorMessage: String?
+        /// The Realm page object for the current page, populated asynchronously.
         public var currentPageObject: Page?
         private var pageLoadTask: Task<Void, Never>?
         
@@ -44,16 +55,26 @@ extension MushafView {
         private let realmService: RealmService
         private let dataCache = QuranDataCacheService.shared
         
+        /// Controls visibility of the reading-settings overlay.
         public var showReadingSetting:Bool = false
+        /// Controls visibility of the reading-settings sheet.
         public var showReadingSettingsSheet:Bool = false
+        /// Controls visibility of the Mushaf type picker.
         public var showMushafTypePicker:Bool = false
+        /// Controls visibility of the bookmarks panel.
         public var showBookmarsView:Bool = false
+        /// Controls visibility of the page-jump slider.
         public var showPageSlider:Bool = false
+        /// Controls visibility of the audio player panel.
         public var showPlayingPanel:Bool = false
+        /// Controls visibility of the search panel.
         public var showSearchPanel:Bool = false
+        /// Controls visibility of the share options panel.
         public var showShareOptions:Bool = false
+        /// Controls visibility of the Tafsir sheet.
         public var showTafsir:Bool = false
         
+        /// Opacity of the main content; reduced to 0.2 when any overlay panel is visible.
         public var contentOpacity:CGFloat {
             if showReadingSetting ||
            showReadingSettingsSheet ||
@@ -70,10 +91,12 @@ extension MushafView {
         }
         // MARK: - Initialization
         
+        /// Creates a view model backed by the given Realm service.
         public init(realmService: RealmService = .shared) {
             self.realmService = realmService
         }
         
+        /// Total number of pages; returns the cached value after data loads, falls back to a live Realm query.
         public var totalPages: Int {
             cachedTotalPages > 0 ? cachedTotalPages : realmService.getTotalPages()
         }
@@ -135,20 +158,24 @@ extension MushafView {
             }
         }
         
+        /// Jumps the reader to the start page of the given chapter.
         public func navigateToChapter(_ chapter: Chapter) {
             currentPage = chapter.startPage
         }
         
+        /// Advances to the next page if one exists.
         public func nextPage() {
             guard currentPage < totalPages else { return }
             currentPage += 1
         }
         
+        /// Moves back to the previous page if one exists.
         public func previousPage() {
             guard currentPage > 1 else { return }
             currentPage -= 1
         }
         
+        /// Navigates to an arbitrary page, clamped to valid bounds.
         public func goToPage(_ page: Int) {
             guard page >= 1 && page <= totalPages else { return }
             currentPage = page

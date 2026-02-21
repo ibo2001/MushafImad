@@ -21,6 +21,7 @@ public enum MushafRealmConfiguration {
 /// Facade around the bundled Realm database that powers Quran metadata.
 @MainActor
 public final class RealmService {
+    /// The shared service instance that uses the bundled Quran database.
     public static let shared = RealmService()
     
     private var realm: Realm?
@@ -51,6 +52,9 @@ public final class RealmService {
     
     // MARK: - Initialization
     
+    /// Opens the Realm database for this service instance.
+    ///
+    /// Must be called before using any synchronous accessor. Async fetch methods call this automatically.
     public func initialize() throws {
         if realm != nil { return }
 
@@ -91,7 +95,7 @@ public final class RealmService {
         }
     }
     
-    /// Check if Realm is initialized
+    /// Whether the underlying Realm database has been opened.
     public var isInitialized: Bool {
         return realm != nil
     }
@@ -110,6 +114,7 @@ public final class RealmService {
     
     // MARK: - Chapter (Surah) Operations
     
+    /// Returns all chapters sorted by number, or `nil` if Realm is not initialized.
     public func getAllChapters() -> Results<Chapter>? {
         return realm?.objects(Chapter.self).sorted(byKeyPath: "number")
     }
@@ -138,10 +143,12 @@ public final class RealmService {
         }
     }
     
+    /// Returns the chapter with the given number, or `nil` if not found.
     public func getChapter(number: Int) -> Chapter? {
         return realm?.objects(Chapter.self).filter("number == %@", number).first?.freeze()
     }
     
+    /// Returns the chapter that starts on or contains the given page.
     public func getChapterForPage(_ pageNumber: Int) -> Chapter? {
         // Get page and find first chapter that appears on it
         guard let page = getPage(number: pageNumber) else { return nil }
@@ -161,6 +168,7 @@ public final class RealmService {
     
     // MARK: - Page Operations
     
+    /// Returns the page with the given number, or `nil` if not found.
     public func getPage(number: Int) -> Page? {
         return realm?.objects(Page.self).filter("number == %d", number).first?.freeze()
     }
@@ -192,12 +200,14 @@ public final class RealmService {
         }
     }
     
+    /// Returns the total number of pages in the database, defaulting to 604.
     public func getTotalPages() -> Int {
         return realm?.objects(Page.self).count ?? 604
     }
     
     // MARK: - Page Header Operations
     
+    /// Returns the header object for the given page and Mushaf type.
     public func getPageHeader(for pageNumber: Int, mushafType: MushafType = .hafs1441) -> PageHeader? {
         guard let page = getPage(number: pageNumber) else { return nil }
         
@@ -209,6 +219,7 @@ public final class RealmService {
         }
     }
     
+    /// Returns a lightweight header value type for the given page and Mushaf type.
     public func getPageHeaderInfo(for pageNumber: Int, mushafType: MushafType = .hafs1441) -> PageHeaderInfo? {
         guard let header = getPageHeader(for: pageNumber, mushafType: mushafType) else { return nil }
         
@@ -232,6 +243,7 @@ public final class RealmService {
     
     // MARK: - Verse Operations
     
+    /// Returns all verses on the given page for the specified Mushaf type.
     public func getVersesForPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> [Verse] {
         guard let page = getPage(number: pageNumber) else { return [] }
         
@@ -243,11 +255,13 @@ public final class RealmService {
         }
     }
     
+    /// Returns all verses in the given chapter.
     public func getVersesForChapter(_ chapterNumber: Int) -> [Verse] {
         guard let chapter = getChapter(number: chapterNumber) else { return [] }
         return Array(chapter.verses.freeze())
     }
     
+    /// Returns the verse identified by chapter and verse numbers, or `nil` if not found.
     public func getVerse(chapterNumber: Int, verseNumber: Int) -> Verse? {
         let humanReadableID = "\(chapterNumber)_\(verseNumber)"
         return realm?.objects(Verse.self).filter("humanReadableID == %@", humanReadableID).first?.freeze()
@@ -255,15 +269,18 @@ public final class RealmService {
     
     // MARK: - Part (Juz) Operations
     
+    /// Returns the juz' with the given number, or `nil` if not found.
     public func getPart(number: Int) -> Part? {
         return realm?.objects(Part.self).filter("number == %@", number).first?.freeze()
     }
     
+    /// Returns the juz' that contains the given page.
     public func getPartForPage(_ pageNumber: Int) -> Part? {
         guard let page = getPage(number: pageNumber) else { return nil }
         return page.header1441?.part?.freeze()
     }
     
+    /// Returns the juz' that contains the given verse.
     public func getPartForVerse(chapterNumber: Int, verseNumber: Int) -> Part? {
         guard let verse = getVerse(chapterNumber: chapterNumber, verseNumber: verseNumber) else { return nil }
         return verse.part?.freeze()
@@ -295,16 +312,19 @@ public final class RealmService {
     
     // MARK: - Quarter (Hizb) Operations
     
+    /// Returns the quarter (rub' hizb) for the given hizb number and fraction (0–3).
     public func getQuarter(hizbNumber: Int, fraction: Int) -> Quarter? {
         return realm?.objects(Quarter.self)
             .filter("hizbNumber == %@ AND hizbFraction == %@", hizbNumber, fraction).first?.freeze()
     }
     
+    /// Returns the quarter that contains the given page.
     public func getQuarterForPage(_ pageNumber: Int) -> Quarter? {
         guard let page = getPage(number: pageNumber) else { return nil }
         return page.header1441?.quarter?.freeze()
     }
     
+    /// Returns the quarter that contains the given verse.
     public func getQuarterForVerse(chapterNumber: Int, verseNumber: Int) -> Quarter? {
         guard let verse = getVerse(chapterNumber: chapterNumber, verseNumber: verseNumber) else { return nil }
         return verse.quarter?.freeze()
@@ -343,6 +363,7 @@ public final class RealmService {
     
     // MARK: - Section (Ruku) Operations
     
+    /// Returns all ruku' sections for the given chapter.
     public func getSectionsForChapter(_ chapterNumber: Int) -> [QuranSection] {
         guard let chapter = getChapter(number: chapterNumber) else { return [] }
         
@@ -359,6 +380,7 @@ public final class RealmService {
     
     // MARK: - Search Operations
     
+    /// Returns verses whose searchable text contains the query (case-insensitive).
     public func searchVerses(query: String) -> [Verse] {
         guard let realm = realm else { return [] }
         
@@ -369,6 +391,7 @@ public final class RealmService {
         return Array(results.freeze())
     }
     
+    /// Returns chapters whose searchable text or keywords match the query (case-insensitive).
     public func searchChapters(query: String) -> [Chapter] {
         guard let realm = realm else { return [] }
         
@@ -381,6 +404,7 @@ public final class RealmService {
     
     // MARK: - Utility Methods
     
+    /// Returns all chapters that appear on the given page.
     public func getChaptersOnPage(_ pageNumber: Int) -> [Chapter] {
         guard let page = getPage(number: pageNumber) else { return [] }
         
@@ -403,6 +427,7 @@ public final class RealmService {
         return Array(chapters).sorted { $0.number < $1.number }.map { $0.freeze() }
     }
     
+    /// Returns the 15 verses of prostration (sajda) from the Quran.
     public func getSajdaVerses() -> [Verse] {
         // Find verses that contain sajda markers
         // This depends on how sajda information is stored in the Realm file
@@ -446,6 +471,7 @@ public struct PageHeaderInfo {
     public let quarterEnglishTitle: String?
     public let chapters: [ChapterInfo]
 
+    /// Creates a page header info value from the given contextual metadata.
     public init(
         partNumber: Int?,
         partArabicTitle: String?,
@@ -466,6 +492,7 @@ public struct PageHeaderInfo {
         self.chapters = chapters
     }
 
+    /// The hizb quarter progress marker derived from `hizbFraction`, or `nil` if at a full hizb boundary.
     public var hizbQuarterProgress: HizbQuarterProgress? {
         guard let fraction = hizbFraction else { return nil }
         switch fraction {
@@ -476,6 +503,7 @@ public struct PageHeaderInfo {
         }
     }
     
+    /// A localised Arabic string displaying the hizb number and fraction, or `nil` if unavailable.
     public var hizbDisplay: String? {
         guard let hizbNumber = hizbNumber else { return nil }
         
@@ -490,6 +518,7 @@ public struct PageHeaderInfo {
         return "الحزب \(hizbNumber)"
     }
     
+    /// A localised Arabic string displaying the juz' (part) number, or `nil` if unavailable.
     public var juzDisplay: String? {
         guard let partNumber = partNumber else { return nil }
         return "الجزء \(partNumber)"
@@ -502,6 +531,7 @@ public struct ChapterInfo {
     public let arabicTitle: String
     public let englishTitle: String
 
+    /// Creates a chapter summary value.
     public init(number: Int, arabicTitle: String, englishTitle: String) {
         self.number = number
         self.arabicTitle = arabicTitle

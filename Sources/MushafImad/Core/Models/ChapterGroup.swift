@@ -7,6 +7,7 @@
 
 import Foundation
 
+/// Groups chapters that belong to a single juz' (part) of the Quran.
 public struct ChaptersByPart: Identifiable {
     public let id: Int
     public let partNumber: Int
@@ -16,6 +17,16 @@ public struct ChaptersByPart: Identifiable {
     public let firstPage: Int?
     public let firstVerse: Verse?
 
+    /// Creates a juz' grouping with the given metadata and chapters.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier for this part (equals `partNumber`).
+    ///   - partNumber: The 1-based juz' number (1–30).
+    ///   - arabicTitle: Localised Arabic title of the juz'.
+    ///   - englishTitle: Localised English title of the juz'.
+    ///   - chapters: Chapters that belong to this juz'.
+    ///   - firstPage: Page number (1441-page edition) where this juz' begins.
+    ///   - firstVerse: First verse of this juz', used for navigation.
     public init(
         id: Int,
         partNumber: Int,
@@ -35,6 +46,7 @@ public struct ChaptersByPart: Identifiable {
     }
 }
 
+/// Groups chapters that fall within a single rub' hizb (quarter of a hizb).
 public struct ChaptersByQuarter: Identifiable {
     public let id: Int
     public let quarterNumber: Int
@@ -46,6 +58,18 @@ public struct ChaptersByQuarter: Identifiable {
     public let firstPage: Int?
     public let firstVerse: Verse?
 
+    /// Creates a quarter grouping with the given hizb metadata and chapters.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier for this quarter (equals `quarterNumber`).
+    ///   - quarterNumber: The 1-based global quarter number.
+    ///   - hizbNumber: The 1-based hizb number this quarter belongs to.
+    ///   - hizbFraction: The position within the hizb (0–3, where 0 = fourth quarter).
+    ///   - arabicTitle: Localised Arabic title for this quarter.
+    ///   - englishTitle: Localised English title for this quarter.
+    ///   - chapters: Chapters that have at least one verse in this quarter.
+    ///   - firstPage: Page number (1441-page edition) where this quarter begins.
+    ///   - firstVerse: First verse of this quarter, used for navigation.
     public init(
         id: Int,
         quarterNumber: Int,
@@ -69,22 +93,31 @@ public struct ChaptersByQuarter: Identifiable {
     }
 }
 
+/// Groups all four quarters that make up a single hizb.
 public struct ChaptersByHizb: Identifiable {
     public let id: Int
     public let hizbNumber: Int
     public let quarters: [ChaptersByQuarter]
 
+    /// Creates a hizb grouping from its constituent quarters.
+    ///
+    /// - Parameters:
+    ///   - id: Unique identifier for this hizb (equals `hizbNumber`).
+    ///   - hizbNumber: The 1-based hizb number (1–60).
+    ///   - quarters: The four `ChaptersByQuarter` values that form this hizb.
     public init(id: Int, hizbNumber: Int, quarters: [ChaptersByQuarter]) {
         self.id = id
         self.hizbNumber = hizbNumber
         self.quarters = quarters
     }
 
+    /// A formatted Arabic title for this hizb (e.g., "الحزب ١").
     public var hizbTitle: String {
         hizbNumber.quarterTitle
     }
 }
 
+/// Groups chapters by their revelation type — Meccan or Medinan.
 public struct ChaptersByType: Identifiable {
     public let id: String
     public let type: String
@@ -93,6 +126,15 @@ public struct ChaptersByType: Identifiable {
     public let firstPage: Int?
     public let firstVerse: Verse?
 
+    /// Creates a type grouping with the given revelation type and chapters.
+    ///
+    /// - Parameters:
+    ///   - id: Stable string identifier — `"meccan"` or `"medinan"`.
+    ///   - type: English name of the revelation type.
+    ///   - arabicType: Arabic name of the revelation type.
+    ///   - chapters: Chapters belonging to this revelation type.
+    ///   - firstPage: Page number (1441-page edition) of the first chapter in the group.
+    ///   - firstVerse: First verse of the group, used for navigation.
     public init(
         id: String,
         type: String,
@@ -109,6 +151,9 @@ public struct ChaptersByType: Identifiable {
         self.firstVerse = firstVerse
     }
 
+    /// Whether this grouping represents Meccan chapters.
+    ///
+    /// Returns `true` when `id == "meccan"`, `false` for Medinan chapters.
     public var isMeccan: Bool {
         id == "meccan"
     }
@@ -118,6 +163,7 @@ public struct ChaptersByType: Identifiable {
 // MARK: - Mock Data Extensions
 
 extension ChaptersByQuarter {
+    /// Prebuilt test fixture representing the first quarter of Hizb 1.
     public static var mockFirstQuarter: ChaptersByQuarter {
         let chapter = Chapter()
         chapter.number = 1
@@ -147,6 +193,7 @@ extension ChaptersByQuarter {
         )
     }
     
+    /// Prebuilt test fixture representing the second quarter of Hizb 1.
     public static var mockSecondQuarter: ChaptersByQuarter {
         let chapter = Chapter()
         chapter.number = 2
@@ -176,6 +223,7 @@ extension ChaptersByQuarter {
         )
     }
     
+    /// Prebuilt test fixture representing the third quarter of Hizb 1.
     public static var mockThirdQuarter: ChaptersByQuarter {
         let chapter = Chapter()
         chapter.number = 2
@@ -205,6 +253,7 @@ extension ChaptersByQuarter {
         )
     }
     
+    /// Prebuilt test fixture representing the fourth quarter of Hizb 1.
     public static var mockFourthQuarter: ChaptersByQuarter {
         let chapter = Chapter()
         chapter.number = 2
@@ -236,6 +285,7 @@ extension ChaptersByQuarter {
 }
 
 public extension ChaptersByHizb {
+    /// Prebuilt test fixture representing Hizb 1 with all four quarters.
     static var mockHizb1: ChaptersByHizb {
         ChaptersByHizb(
             id: 1,
