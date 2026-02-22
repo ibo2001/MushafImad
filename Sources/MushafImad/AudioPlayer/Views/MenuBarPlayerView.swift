@@ -97,7 +97,7 @@ private struct ActivePlayerContent: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text(String(localized: "Previous verse")))
-                .disabled(player.isLoading || !player.canSeekToPrevious)
+                .disabled(player.isLoading)
 
                 Button(action: player.togglePlayback) {
                     Image(systemName: player.isPlaying ? "pause.fill" : "play.fill")
@@ -115,7 +115,7 @@ private struct ActivePlayerContent: View {
                 }
                 .buttonStyle(.plain)
                 .accessibilityLabel(Text(String(localized: "Next verse")))
-                .disabled(player.isLoading || !player.canSeekToNext)
+                .disabled(player.isLoading)
             }
             .foregroundColor(.brand900)
             .environment(\.layoutDirection, .leftToRight)
