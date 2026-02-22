@@ -136,10 +136,14 @@ public struct MushafView: View {
             await viewModel.initializePageView(initialPage: initialPage)
         }
         .onAppear {
-            QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
+            if registersPlayerWithCoordinator {
+                QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
+            }
         }
         .onDisappear {
-            QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
+            if registersPlayerWithCoordinator {
+                QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
+            }
         }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in
             // Clear highlighting when playback stops
