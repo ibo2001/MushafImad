@@ -27,89 +27,28 @@ public struct PlayerViewUI: View {
                 QuranPlayer(
                     viewModel: playerViewModel,
                     onPreviousVerse: {
-                        let moved = playerViewModel.seekToPreviousVerse()
-                        if !moved {
+                        if !playerViewModel.seekToPreviousVerse() {
                             guard let target = viewModel.previousChapter(from: playerViewModel.chapterNumber) else { return }
-                            let wasPlaying = playerViewModel.isPlaying
-                            withAnimation {
-                                viewModel.navigateToChapterAndPrepareScroll(target)
-                            }
-                            playerViewModel.configureIfNeeded(
-                                baseURL: baseURL,
-                                chapterNumber: target.number,
-                                chapterName: target.displayTitle,
-                                reciterName: reciter.displayName,
-                                reciterId: reciter.id
-                            )
-                            playerViewModel.startIfNeeded(autoPlay: wasPlaying)
-                            if !wasPlaying {
-                                let lastVerse = max(1, target.versesCount)
-                                playerViewModel.setPreviewVerse(lastVerse)
-                            }
+                            navigateToChapter(target, baseURL: baseURL, reciter: reciter, previewVerse: max(1, target.versesCount))
                         }
                     },
                     onNextVerse: {
-                        let moved = playerViewModel.seekToNextVerse()
-                        if !moved {
+                        if !playerViewModel.seekToNextVerse() {
                             guard let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) else { return }
-                            let wasPlaying = playerViewModel.isPlaying
-                            withAnimation {
-                                viewModel.navigateToChapterAndPrepareScroll(target)
-                            }
-                            playerViewModel.configureIfNeeded(
-                                baseURL: baseURL,
-                                chapterNumber: target.number,
-                                chapterName: target.displayTitle,
-                                reciterName: reciter.displayName,
-                                reciterId: reciter.id
-                            )
-                            playerViewModel.startIfNeeded(autoPlay: wasPlaying)
-                            if !wasPlaying {
-                                playerViewModel.setPreviewVerse(1)
-                            }
+                            navigateToChapter(target, baseURL: baseURL, reciter: reciter, previewVerse: 1)
                         }
                     },
                     onPreviousChapter: {
                         guard let target = viewModel.previousChapter(from: playerViewModel.chapterNumber) else { return }
-                        let wasPlaying = playerViewModel.isPlaying
-                        withAnimation {
-                            viewModel.navigateToChapterAndPrepareScroll(target)
-                        }
-                        playerViewModel.configureIfNeeded(
-                            baseURL: baseURL,
-                            chapterNumber: target.number,
-                            chapterName: target.displayTitle,
-                            reciterName: reciter.displayName,
-                            reciterId: reciter.id
-                        )
-                        playerViewModel.startIfNeeded(autoPlay: wasPlaying)
-                        if !wasPlaying {
-                            let lastVerse = max(1, target.versesCount)
-                            playerViewModel.setPreviewVerse(lastVerse)
-                        }
+                        navigateToChapter(target, baseURL: baseURL, reciter: reciter, previewVerse: max(1, target.versesCount))
                     },
                     onNextChapter: {
                         guard let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) else { return }
-                        let wasPlaying = playerViewModel.isPlaying
-                        withAnimation {
-                            viewModel.navigateToChapterAndPrepareScroll(target)
-                        }
-                        playerViewModel.configureIfNeeded(
-                            baseURL: baseURL,
-                            chapterNumber: target.number,
-                            chapterName: target.displayTitle,
-                            reciterName: reciter.displayName,
-                            reciterId: reciter.id
-                        )
-                        playerViewModel.startIfNeeded(autoPlay: wasPlaying)
-                        if !wasPlaying {
-                            playerViewModel.setPreviewVerse(1)
-                        }
+                        navigateToChapter(target, baseURL: baseURL, reciter: reciter, previewVerse: 1)
                     }
                 )
                 .id(chapter.number)
                 .onAppear {
-                    // Configure the player with the current reciter and chapter
                     playerViewModel.configureIfNeeded(
                         baseURL: baseURL,
                         chapterNumber: chapter.number,
@@ -135,6 +74,29 @@ public struct PlayerViewUI: View {
         }
         .onDisappear {
             QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
+        }
+    }
+
+    // MARK: - Private Helpers
+
+    private func navigateToChapter(
+        _ target: Chapter,
+        baseURL: URL,
+        reciter: ReciterService.ReciterInfo,
+        previewVerse: Int
+    ) {
+        let wasPlaying = playerViewModel.isPlaying
+        withAnimation { viewModel.navigateToChapterAndPrepareScroll(target) }
+        playerViewModel.configureIfNeeded(
+            baseURL: baseURL,
+            chapterNumber: target.number,
+            chapterName: target.displayTitle,
+            reciterName: reciter.displayName,
+            reciterId: reciter.id
+        )
+        playerViewModel.startIfNeeded(autoPlay: wasPlaying)
+        if !wasPlaying {
+            playerViewModel.setPreviewVerse(previewVerse)
         }
     }
 }
