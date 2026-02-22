@@ -220,8 +220,8 @@ public struct MushafView: View {
                     highlightedVerse: currentHighlight,
                     selectedVerse: $viewModel.selectedVerse,
                     onVerseLongPress: { verse in
-                        viewModel.selectedVerse = nil
                         if let handler = externalLongPressHandler {
+                            viewModel.selectedVerse = nil
                             highlightedVerseBinding?.wrappedValue = nil
                             handler(verse)
                         } else {
