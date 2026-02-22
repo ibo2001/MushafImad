@@ -31,25 +31,15 @@ public final class QuranPlayerCoordinator: ObservableObject {
 
     /// Call when a player view appears and becomes the primary playback surface.
     public func registerActivePlayer(_ player: QuranPlayerViewModel) {
-<<<<<<< HEAD
-        activePlayer = player
-=======
         objectWillChange.send()
         _activePlayer = player
->>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
     }
 
     /// Call when a player view disappears. Only unregisters if it matches the
     /// current active player to avoid race conditions during navigation.
     public func unregisterActivePlayer(_ player: QuranPlayerViewModel) {
-<<<<<<< HEAD
-        if activePlayer === player {
-            activePlayer = nil
-        }
-=======
         guard _activePlayer === player else { return }
         objectWillChange.send()
         _activePlayer = nil
->>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
     }
 }
