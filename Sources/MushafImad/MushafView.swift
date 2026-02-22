@@ -72,6 +72,11 @@ public struct MushafView: View {
     private let highlightedVerseBinding: Binding<Verse?>?
     private let externalLongPressHandler: ((Verse) -> Void)?
     private let externalPageTapHandler: (() -> Void)?
+    /// When false, the view does not auto-register its internal player with
+    /// QuranPlayerCoordinator. Set to false when the embedding view manages
+    /// its own player and handles coordinator registration itself (e.g. VerseByVerseDemo),
+    /// to avoid transient dual-registration overwriting the outer player.
+    private let registersPlayerWithCoordinator: Bool
     
     @State private var viewModel = ViewModel()
     @StateObject private var playerViewModel = QuranPlayerViewModel()
@@ -90,24 +95,28 @@ public struct MushafView: View {
     
     public init(initialPage: Int? = nil,
                 highlightedVerse: Verse? = nil,
+                registerPlayerWithCoordinator: Bool = true,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
                 onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.staticHighlightedVerse = highlightedVerse
         self.highlightedVerseBinding = nil
+        self.registersPlayerWithCoordinator = registerPlayerWithCoordinator
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
-    
+
     public init(initialPage: Int? = nil,
                 highlightedVerse: Binding<Verse?>,
+                registerPlayerWithCoordinator: Bool = true,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
                 onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.highlightedVerseBinding = highlightedVerse
         self.staticHighlightedVerse = nil
+        self.registersPlayerWithCoordinator = registerPlayerWithCoordinator
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
@@ -149,32 +158,13 @@ public struct MushafView: View {
             if newMode == .text {
                 let page = viewModel.scrollPosition ?? initialPage ?? 1
                 textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+            if registersPlayerWithCoordinator {
+                QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
             }
         }
-        .toolbar {
-            ToolbarItemGroup(placement: .topBarTrailing) {
-                if displayMode == .text {
-                    Menu {
-                        ForEach([16.0, 20.0, 24.0, 28.0, 32.0, 36.0], id: \.self) { size in
-                            Button {
-                                textFontSize = size
-                            } label: {
-                                if abs(textFontSize - size) < 0.5 {
-                                    Label("\(Int(size))pt", systemImage: "checkmark")
-                                } else {
-                                    Text("\(Int(size))pt")
-                                }
-                            }
-                        }
-                    } label: {
-                        Image(systemName: "textformat.size")
-                    }
-                }
-                Button {
-                    displayMode = (displayMode == .image) ? .text : .image
-                } label: {
-                    Image(systemName: displayMode == .image ? "text.justify.leading" : "book.pages")
-                }
+        .onDisappear {
+            if registersPlayerWithCoordinator {
+                QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
             }
         }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in

@@ -13,26 +13,43 @@ import Foundation
 public final class QuranPlayerCoordinator: ObservableObject {
     public static let shared = QuranPlayerCoordinator()
 
+    // Weak so the coordinator never prevents the view model from being
+    // deallocated — important on macOS where onDisappear may not fire
+    // reliably when a window is force-quit or closed via Cmd+W.
+    private weak var _activePlayer: QuranPlayerViewModel?
+
     /// The player instance that is currently active (most recently registered).
-    @Published public private(set) var activePlayer: QuranPlayerViewModel?
+    /// Returns nil automatically if the owning view has been deallocated.
+    public var activePlayer: QuranPlayerViewModel? { _activePlayer }
 
     /// Whether any player is currently registered and has a valid configuration.
     public var hasActivePlayer: Bool {
-        activePlayer?.hasValidConfiguration ?? false
+        _activePlayer?.hasValidConfiguration ?? false
     }
 
     private init() {}
 
     /// Call when a player view appears and becomes the primary playback surface.
     public func registerActivePlayer(_ player: QuranPlayerViewModel) {
+<<<<<<< HEAD
         activePlayer = player
+=======
+        objectWillChange.send()
+        _activePlayer = player
+>>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
     }
 
     /// Call when a player view disappears. Only unregisters if it matches the
     /// current active player to avoid race conditions during navigation.
     public func unregisterActivePlayer(_ player: QuranPlayerViewModel) {
+<<<<<<< HEAD
         if activePlayer === player {
             activePlayer = nil
         }
+=======
+        guard _activePlayer === player else { return }
+        objectWillChange.send()
+        _activePlayer = nil
+>>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
     }
 }
