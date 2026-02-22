@@ -137,6 +137,10 @@ public struct MushafView: View {
         }
         .onAppear {
             QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
+            if displayMode == .text {
+                let page = viewModel.scrollPosition ?? initialPage ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+            }
         }
         .onDisappear {
             QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
