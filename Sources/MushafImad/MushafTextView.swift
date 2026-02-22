@@ -17,6 +17,8 @@ public struct MushafTextView: View {
     @Binding var selectedVerse: Verse?
     let onVerseLongPress: ((Verse) -> Void)?
     let fontSize: Double
+    
+    @State private var didPerformInitialScroll = false
 
     public var body: some View {
         ScrollViewReader { proxy in
@@ -28,17 +30,21 @@ public struct MushafTextView: View {
                             selectedVerse: $selectedVerse,
                             highlightedVerse: highlightedVerse,
                             onVerseLongPress: onVerseLongPress,
-                            fontSize: fontSize
+                            fontSize: fontSize,
+                            isInitialChapter: number == initialChapter,
+                            onInitialChapterAppear: {
+                                if !didPerformInitialScroll {
+                                    didPerformInitialScroll = true
+                                    withAnimation(.none) {
+                                        proxy.scrollTo(initialChapter, anchor: .top)
+                                    }
+                                }
+                            }
                         )
                         .id(number)
                     }
                 }
                 .padding(.horizontal, 16)
-            }
-            .task {
-                // Small delay so LazyVStack lays out before scrolling
-                try? await Task.sleep(nanoseconds: 50_000_000)
-                proxy.scrollTo(initialChapter, anchor: .top)
             }
         }
     }
