@@ -58,6 +58,8 @@ private struct ChapterTextSection: View {
     let highlightedVerse: Verse?
     let onVerseLongPress: ((Verse) -> Void)?
     let fontSize: Double
+    let isInitialChapter: Bool
+    let onInitialChapterAppear: (() -> Void)?
 
     @State private var chapter: Chapter?
 
@@ -105,6 +107,11 @@ private struct ChapterTextSection: View {
                     .fill(Color.secondary.opacity(0.08))
                     .frame(minHeight: estimatedHeight)
                     .padding(.vertical, 8)
+            }
+        }
+        .onAppear {
+            if isInitialChapter {
+                onInitialChapterAppear?()
             }
         }
         .task {
