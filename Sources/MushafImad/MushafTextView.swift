@@ -97,9 +97,13 @@ private struct ChapterTextSection: View {
                 Divider().padding(.vertical, 8)
             } else {
                 // Placeholder while chapter data loads
+                // Estimate height based on typical chapter size (header + verses + spacing)
+                let estimatedVerseCount = 250 // Average verses per chapter
+                let estimatedHeight = 40 + (estimatedVerseCount * (fontSize * 1.8)) + 32
+                
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.08))
-                    .frame(height: 200)
+                    .frame(minHeight: estimatedHeight)
                     .padding(.vertical, 8)
             }
         }
