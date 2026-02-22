@@ -40,7 +40,7 @@ public struct PageHeaderView: View {
             }
         }
         .font(.system(size: 12, weight: .semibold))
-        .foregroundColor(.brand900)
+        .foregroundStyle(.brand900)
         .padding(.horizontal, horizentalPadding)
         .environment(\.layoutDirection, .rightToLeft)
     }

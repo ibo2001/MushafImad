@@ -14,9 +14,22 @@
 		F6ECB7862EC540DD00C71679 /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
+/* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		F603F9D82EC5E31D00DB1C13 /* Exceptions for "Example" folder in "Example" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = F6ECB7852EC540DD00C71679 /* Example */;
+		};
+/* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
+
 /* Begin PBXFileSystemSynchronizedRootGroup section */
 		F6ECB7882EC540DD00C71679 /* Example */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				F603F9D82EC5E31D00DB1C13 /* Exceptions for "Example" folder in "Example" target */,
+			);
 			path = Example;
 			sourceTree = "<group>";
 		};

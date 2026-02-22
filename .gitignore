@@ -50,3 +50,6 @@ fastlane/test_output
 
 # Build server configuration (auto-generated)
 buildServer.json
+
+#AI
+copilot-instructions.md

@@ -225,7 +225,7 @@ public struct QuranPlayer: View {
         }
         .font(.system(size: 22))
         .bold()
-        .foregroundColor(.brand900)
+        .foregroundStyle(.brand900)
         .opacity(viewModel.isLoading ? 0.7 : 1)
         .frame(height:55)
     }
