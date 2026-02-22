@@ -14,7 +14,7 @@ public enum ReadingTheme: String, CaseIterable {
     case calm
     case night
     case white
-    
+
     public var color: Color {
         switch self {
         case .comfortable:
@@ -27,7 +27,7 @@ public enum ReadingTheme: String, CaseIterable {
             return Color(hex: "#FFFFFF")
         }
     }
-    
+
     public var title: String {
         switch self {
         case .comfortable:
@@ -43,7 +43,7 @@ public enum ReadingTheme: String, CaseIterable {
 }
 
 /// Controls whether the reader shows image-based pages or text-based verses.
-public enum DisplayMode: String {
+public enum DisplayMode: String, CaseIterable {
     case image
     case text
 }
@@ -52,7 +52,7 @@ public enum DisplayMode: String {
 public enum ScrollingMode: String, CaseIterable {
     case automatic
     case horizontal
-    
+
     public var title: String {
         switch self {
         case .automatic:
@@ -72,12 +72,7 @@ public struct MushafView: View {
     private let highlightedVerseBinding: Binding<Verse?>?
     private let externalLongPressHandler: ((Verse) -> Void)?
     private let externalPageTapHandler: (() -> Void)?
-    /// When false, the view does not auto-register its internal player with
-    /// QuranPlayerCoordinator. Set to false when the embedding view manages
-    /// its own player and handles coordinator registration itself (e.g. VerseByVerseDemo),
-    /// to avoid transient dual-registration overwriting the outer player.
-    private let registersPlayerWithCoordinator: Bool
-    
+
     @State private var viewModel = ViewModel()
     @StateObject private var playerViewModel = QuranPlayerViewModel()
     @EnvironmentObject private var reciterService: ReciterService
@@ -85,42 +80,38 @@ public struct MushafView: View {
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
     @State private var playingVerse: Verse? = nil
-    
+
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     @AppStorage("display_mode") private var displayMode: DisplayMode = .image
     @AppStorage("text_font_size") private var textFontSize: Double = 24.0
     @State private var textModeInitialChapter: Int = 1
-    
-    
+
+
     public init(initialPage: Int? = nil,
                 highlightedVerse: Verse? = nil,
-                registerPlayerWithCoordinator: Bool = true,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
                 onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.staticHighlightedVerse = highlightedVerse
         self.highlightedVerseBinding = nil
-        self.registersPlayerWithCoordinator = registerPlayerWithCoordinator
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
 
     public init(initialPage: Int? = nil,
                 highlightedVerse: Binding<Verse?>,
-                registerPlayerWithCoordinator: Bool = true,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
                 onPageTap: (() -> Void)? = nil
     ) {
         self.initialPage = initialPage
         self.highlightedVerseBinding = highlightedVerse
         self.staticHighlightedVerse = nil
-        self.registersPlayerWithCoordinator = registerPlayerWithCoordinator
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
-    
+
     public var body: some View {
         ZStack {
             readingTheme.color.ignoresSafeArea()
@@ -129,14 +120,12 @@ public struct MushafView: View {
             } else {
                 pageView
                     .foregroundStyle(.naturalBlack)
-                
             }
         }
         .environment(\.colorScheme, readingTheme == .night ? .dark : .light)
         .opacity(viewModel.contentOpacity)
         .onChange(of: viewModel.scrollPosition) { oldPage, newPage in
             guard let newPage = newPage else { return }
-            
             Task {
                 await viewModel.handlePageChange(from: oldPage, to: newPage)
             }
@@ -145,26 +134,41 @@ public struct MushafView: View {
             await viewModel.initializePageView(initialPage: initialPage)
         }
         .onAppear {
-            QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
             if displayMode == .text {
                 let page = viewModel.scrollPosition ?? initialPage ?? 1
                 textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
             }
         }
-        .onDisappear {
-            QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
-        }
         .onChange(of: displayMode) { _, newMode in
             if newMode == .text {
                 let page = viewModel.scrollPosition ?? initialPage ?? 1
                 textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
-            if registersPlayerWithCoordinator {
-                QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
             }
         }
-        .onDisappear {
-            if registersPlayerWithCoordinator {
-                QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if displayMode == .text {
+                    Menu {
+                        ForEach([16.0, 20.0, 24.0, 28.0, 32.0, 36.0], id: \.self) { size in
+                            Button {
+                                textFontSize = size
+                            } label: {
+                                if abs(textFontSize - size) < 0.5 {
+                                    Label("\(Int(size))pt", systemImage: "checkmark")
+                                } else {
+                                    Text("\(Int(size))pt")
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "textformat.size")
+                    }
+                }
+                Button {
+                    displayMode = (displayMode == .image) ? .text : .image
+                } label: {
+                    Image(systemName: displayMode == .image ? "text.justify.leading" : "book.pages")
+                }
             }
         }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in
@@ -189,7 +193,7 @@ public struct MushafView: View {
                     )
                     playerViewModel.startIfNeeded(autoPlay: true)
                 }
-                
+
             default:
                 break
             }
@@ -229,7 +233,7 @@ public struct MushafView: View {
         }
         .environment(\.layoutDirection, .rightToLeft)
     }
-    
+
     public func horizontalPageView(currentHighlight: Verse?) -> some View {
         TabView(selection: $viewModel.scrollPosition) {
             ForEach(1...604, id: \.self) { pageNumber in
@@ -242,7 +246,7 @@ public struct MushafView: View {
         .indexViewStyle(.page(backgroundDisplayMode: .never))
         #endif
     }
-    
+
     public func verticalPageView(currentHighlight: Verse?) -> some View {
         GeometryReader { geometry in
             let scrollBinding = Binding(
@@ -252,7 +256,7 @@ public struct MushafView: View {
                     viewModel.scrollPosition = newValue
                 }
             )
-            
+
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
                     ForEach(1...604, id: \.self) { pageNumber in
@@ -270,7 +274,7 @@ public struct MushafView: View {
             .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
     }
-    
+
     public func pageContent(for pageNumber: Int, highlight: Verse?) -> some View {
         PageContainer(
             pageNumber: pageNumber,
@@ -310,4 +314,3 @@ public struct MushafView: View {
     .environment(\.layoutDirection, .leftToRight)
     //.environment(\.locale, Locale(identifier: "ar_SA"))
 }
-

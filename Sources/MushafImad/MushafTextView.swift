@@ -17,7 +17,7 @@ public struct MushafTextView: View {
     @Binding var selectedVerse: Verse?
     let onVerseLongPress: ((Verse) -> Void)?
     let fontSize: Double
-    
+
     @State private var didPerformInitialScroll = false
 
     public var body: some View {
@@ -31,21 +31,24 @@ public struct MushafTextView: View {
                             highlightedVerse: highlightedVerse,
                             onVerseLongPress: onVerseLongPress,
                             fontSize: fontSize,
-                            isInitialChapter: number == initialChapter,
-                            onInitialChapterAppear: {
+                            // Only pass the scroll callback for the target chapter;
+                            // nil for all others so the section calls it unconditionally.
+                            onInitialChapterAppear: number == initialChapter ? {
                                 if !didPerformInitialScroll {
                                     didPerformInitialScroll = true
                                     withAnimation(.none) {
                                         proxy.scrollTo(initialChapter, anchor: .top)
                                     }
                                 }
-                            }
+                            } : nil
                         )
                         .id(number)
                     }
                 }
                 .padding(.horizontal, 16)
             }
+            // Force RTL regardless of device locale so Quran text always reads right-to-left.
+            .environment(\.layoutDirection, .rightToLeft)
         }
     }
 }
@@ -58,7 +61,8 @@ private struct ChapterTextSection: View {
     let highlightedVerse: Verse?
     let onVerseLongPress: ((Verse) -> Void)?
     let fontSize: Double
-    let isInitialChapter: Bool
+    /// Non-nil only for the initial chapter; called in .onAppear to trigger the
+    /// one-time scroll-to-position without needing a separate isInitialChapter flag.
     let onInitialChapterAppear: (() -> Void)?
 
     @State private var chapter: Chapter?
@@ -117,9 +121,9 @@ private struct ChapterTextSection: View {
             } else {
                 // Placeholder while chapter data loads — sized to the actual
                 // verse count for this surah so the scroll position stays stable.
-                let estimatedVerseCount = Double(Self.verseCounts[chapterNumber - 1])
-                let estimatedHeight = 40.0 + (estimatedVerseCount * fontSize * 1.8) + 32.0
-                
+                let estimatedVerseCount = CGFloat(Self.verseCounts[chapterNumber - 1])
+                let estimatedHeight: CGFloat = 40 + (estimatedVerseCount * CGFloat(fontSize) * 1.8) + 32
+
                 RoundedRectangle(cornerRadius: 8)
                     .fill(Color.secondary.opacity(0.08))
                     .frame(minHeight: estimatedHeight)
@@ -127,27 +131,20 @@ private struct ChapterTextSection: View {
             }
         }
         .onAppear {
-            if isInitialChapter {
-                onInitialChapterAppear?()
-            }
+            onInitialChapterAppear?()
         }
         .task {
             chapter = RealmService.shared.getChapter(number: chapterNumber)
         }
     }
 
+    // Matches PageHeaderView: "سورة <arabicTitle>" in the chapter-names font at size 24.
     @ViewBuilder
     private func chapterHeader(_ chapter: Chapter) -> some View {
-        VStack(spacing: 2) {
-            if chapter.titleCodePoint.isEmpty {
-                Text(chapter.arabicTitle)
-                    .font(.kitabBold(size: 22))
-                    .frame(maxWidth: .infinity, alignment: .center)
-            } else {
-                Text(chapter.titleCodePoint)
-                    .font(.chapterNames(size: 40))
-                    .frame(maxWidth: .infinity, alignment: .center)
-            }
+        VStack(spacing: 4) {
+            Text("سورة \(chapter.arabicTitle)")
+                .font(.chapterNames(size: 24))
+                .frame(maxWidth: .infinity, alignment: .center)
             Text(chapter.englishTitle)
                 .font(.kitab(size: 13))
                 .foregroundStyle(.secondary)
@@ -174,25 +171,43 @@ private struct VerseTextRow: View {
     let fontSize: Double
     let onLongPress: () -> Void
 
-    private var displayText: String {
-        let base = verse.uthmanicHafsText.isEmpty ? verse.text : verse.uthmanicHafsText
-        return base + " \u{FD3E}\(verse.number.toArabic)\u{FD3F}"
+    // VerseFasel's internal base font size (14 * balance 3.69).
+    // Dividing fontSize by this gives the scale that makes the fasel
+    // the same visual weight as the verse text.
+    private static let verseFaselBaseFontSize: CGFloat = 14 * 3.69
+
+    private var verseText: String {
+        verse.uthmanicHafsText.isEmpty ? verse.text : verse.uthmanicHafsText
+    }
+
+    // Selected (user tapped) uses accent900; audio-highlighted uses the lighter
+    // accent500 so readers can distinguish "I selected this" from "audio is here".
+    private var backgroundColor: Color {
+        if isSelected { return .accent900 }
+        if isHighlighted { return .accent500 }
+        return .clear
     }
 
     var body: some View {
-        Text(displayText)
-            .font(.uthmanicHafs(size: fontSize))
-            .multilineTextAlignment(.trailing)
-            .lineSpacing(CGFloat(fontSize) * 0.4)
-            .frame(maxWidth: .infinity, alignment: .trailing)
-            .padding(8)
-            .background(
-                RoundedRectangle(cornerRadius: 8)
-                    .fill((isSelected || isHighlighted)
-                          ? Color.accent900
-                          : Color.clear)
+        VStack(alignment: .trailing, spacing: 4) {
+            Text(verseText)
+                .font(.uthmanicHafs(size: fontSize))
+                .multilineTextAlignment(.trailing)
+                .lineSpacing(CGFloat(fontSize) * 0.4)
+                .frame(maxWidth: .infinity, alignment: .trailing)
+
+            VerseFasel(
+                number: verse.number,
+                scale: CGFloat(fontSize) / Self.verseFaselBaseFontSize
             )
-            .contentShape(Rectangle())
-            .onLongPressGesture(minimumDuration: 0.5, perform: onLongPress)
+            .frame(maxWidth: .infinity, alignment: .trailing)
+        }
+        .padding(8)
+        .background(
+            RoundedRectangle(cornerRadius: 8)
+                .fill(backgroundColor)
+        )
+        .contentShape(Rectangle())
+        .onLongPressGesture(minimumDuration: 0.5, perform: onLongPress)
     }
 }
