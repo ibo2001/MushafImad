@@ -261,6 +261,7 @@ private struct VerseByVerseDemo: View {
         MushafView(
             initialPage: highlightedVerse?.page1441?.number ?? 1,
             highlightedVerse: $highlightedVerse,
+            registerPlayerWithCoordinator: false,
             onVerseLongPress: handleLongPress(_:))
         .navigationTitle("Verse by Verse")
         .onAppear {
