@@ -40,26 +40,7 @@ public struct PlayerViewUI: View {
                     },
                     onPreviousChapter: {
                         guard let target = viewModel.previousChapter(from: playerViewModel.chapterNumber) else { return }
-<<<<<<< HEAD
-                        let wasPlaying = playerViewModel.isPlaying
-                        withAnimation {
-                            viewModel.navigateToChapterAndPrepareScroll(target)
-                        }
-                        playerViewModel.configureIfNeeded(
-                            baseURL: baseURL,
-                            chapterNumber: target.number,
-                            chapterName: target.displayTitle,
-                            reciterName: reciter.displayName,
-                            reciterId: reciter.id
-                        )
-                        playerViewModel.startIfNeeded(autoPlay: wasPlaying)
-                        if !wasPlaying {
-                            let lastVerse = max(1, target.versesCount)
-                            playerViewModel.setPreviewVerse(lastVerse)
-                        }
-=======
                         navigateToChapter(target, baseURL: baseURL, reciter: reciter, previewVerse: max(1, target.versesCount))
->>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
                     },
                     onNextChapter: {
                         guard let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) else { return }
@@ -68,10 +49,7 @@ public struct PlayerViewUI: View {
                 )
                 .id(chapter.number)
                 .onAppear {
-<<<<<<< HEAD
                     // Configure the player with the current reciter and chapter
-=======
->>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
                     playerViewModel.configureIfNeeded(
                         baseURL: baseURL,
                         chapterNumber: chapter.number,
@@ -97,8 +75,6 @@ public struct PlayerViewUI: View {
         }
         .onDisappear {
             QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
-<<<<<<< HEAD
-=======
         }
     }
 
@@ -122,7 +98,6 @@ public struct PlayerViewUI: View {
         playerViewModel.startIfNeeded(autoPlay: wasPlaying)
         if !wasPlaying {
             playerViewModel.setPreviewVerse(previewVerse)
->>>>>>> 3953433bb2ad9c75ca63b83df5cc753e30767912
         }
     }
 }
