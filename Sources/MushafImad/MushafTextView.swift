@@ -155,7 +155,7 @@ private struct VerseTextRow: View {
             .background(
                 RoundedRectangle(cornerRadius: 8)
                     .fill((isSelected || isHighlighted)
-                          ? Color(.accent900)
+                          ? Color.accent900
                           : Color.clear)
             )
             .contentShape(Rectangle())
