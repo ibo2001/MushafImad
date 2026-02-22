@@ -42,6 +42,12 @@ public enum ReadingTheme: String, CaseIterable {
     }
 }
 
+/// Controls whether the reader shows image-based pages or text-based verses.
+public enum DisplayMode: String {
+    case image
+    case text
+}
+
 /// Layout options that control how Mushaf pages are paged through.
 public enum ScrollingMode: String, CaseIterable {
     case automatic
@@ -77,6 +83,9 @@ public struct MushafView: View {
     
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
+    @AppStorage("display_mode") private var displayMode: DisplayMode = .image
+    @AppStorage("text_font_size") private var textFontSize: Double = 24.0
+    @State private var textModeInitialChapter: Int = 1
     
     
     public init(initialPage: Int? = nil,
@@ -132,6 +141,38 @@ public struct MushafView: View {
         .onDisappear {
             QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
         }
+        .onChange(of: displayMode) { _, newMode in
+            if newMode == .text {
+                let page = viewModel.scrollPosition ?? initialPage ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if displayMode == .text {
+                    Menu {
+                        ForEach([16.0, 20.0, 24.0, 28.0, 32.0, 36.0], id: \.self) { size in
+                            Button {
+                                textFontSize = size
+                            } label: {
+                                if abs(textFontSize - size) < 0.5 {
+                                    Label("\(Int(size))pt", systemImage: "checkmark")
+                                } else {
+                                    Text("\(Int(size))pt")
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "textformat.size")
+                    }
+                }
+                Button {
+                    displayMode = (displayMode == .image) ? .text : .image
+                } label: {
+                    Image(systemName: displayMode == .image ? "text.justify.leading" : "book.pages")
+                }
+            }
+        }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in
             // Clear highlighting when playback stops
             switch newState {
@@ -167,9 +208,26 @@ public struct MushafView: View {
         let currentHighlight = playingVerse
             ?? highlightedVerseBinding?.wrappedValue
             ?? staticHighlightedVerse
-        
+
         Group {
-            if scrollingMode == .horizontal {
+            if displayMode == .text {
+                MushafTextView(
+                    initialChapter: textModeInitialChapter,
+                    highlightedVerse: currentHighlight,
+                    selectedVerse: $viewModel.selectedVerse,
+                    onVerseLongPress: { verse in
+                        viewModel.selectedVerse = nil
+                        if let handler = externalLongPressHandler {
+                            highlightedVerseBinding?.wrappedValue = nil
+                            handler(verse)
+                        } else {
+                            viewModel.showVerseDetails(verse)
+                            highlightedVerseBinding?.wrappedValue = verse
+                        }
+                    },
+                    fontSize: textFontSize
+                )
+            } else if scrollingMode == .horizontal {
                 horizontalPageView(currentHighlight: currentHighlight)
             } else {
                 verticalPageView(currentHighlight: currentHighlight)
