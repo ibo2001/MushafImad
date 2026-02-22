@@ -117,7 +117,7 @@ private struct ActivePlayerContent: View {
                 .accessibilityLabel(Text(String(localized: "Next verse")))
                 .disabled(player.isLoading)
             }
-            .foregroundColor(.brand900)
+            .foregroundStyle(.brand900)
             .environment(\.layoutDirection, .leftToRight)
             .padding(.vertical, 8)
 
