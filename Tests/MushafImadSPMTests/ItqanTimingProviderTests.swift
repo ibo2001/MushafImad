@@ -2,30 +2,32 @@ import Foundation
 import Testing
 @testable import MushafImad
 
-final class MockURLProtocol: URLProtocol, @unchecked Sendable {
-    static var requestHandler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
+@Suite(.serialized)
+struct ItqanTimingProviderTests {
+    final class MockURLProtocol: URLProtocol, @unchecked Sendable {
+        static var requestHandler: (@Sendable (URLRequest) throws -> (HTTPURLResponse, Data))?
 
-    override class func canInit(with request: URLRequest) -> Bool { true }
-    override class func canonicalRequest(for request: URLRequest) -> URLRequest { request }
+        override static func canInit(with request: URLRequest) -> Bool { true }
+        override static func canonicalRequest(for request: URLRequest) -> URLRequest { request }
 
-    override func startLoading() {
-        guard let handler = Self.requestHandler else {
-            client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
-            return
+        override func startLoading() {
+            guard let handler = Self.requestHandler else {
+                client?.urlProtocol(self, didFailWithError: URLError(.badServerResponse))
+                return
+            }
+
+            do {
+                let (response, data) = try handler(request)
+                client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
+                client?.urlProtocol(self, didLoad: data)
+                client?.urlProtocolDidFinishLoading(self)
+            } catch {
+                client?.urlProtocol(self, didFailWithError: error)
+            }
         }
 
-        do {
-            let (response, data) = try handler(request)
-            client?.urlProtocol(self, didReceive: response, cacheStoragePolicy: .notAllowed)
-            client?.urlProtocol(self, didLoad: data)
-            client?.urlProtocolDidFinishLoading(self)
-        } catch {
-            client?.urlProtocol(self, didFailWithError: error)
-        }
+        override func stopLoading() {}
     }
-
-    override func stopLoading() {}
-}
 
 @Test func itqanProviderParsesWrappedDataPayload() async throws {
     let payload = """
@@ -169,4 +171,5 @@ final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     #expect(timings.count == 2)
     #expect(timings[0] == VerseTiming(surahId: 3, ayahId: 1, startTime: 0, endTime: 0.32))
     #expect(timings[1] == VerseTiming(surahId: 3, ayahId: 2, startTime: 0.32, endTime: 0.69))
+}
 }

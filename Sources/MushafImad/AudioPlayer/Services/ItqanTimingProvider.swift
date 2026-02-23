@@ -34,6 +34,9 @@ struct ItqanTimingProvider: VerseTimingProvider {
                     return timings.sorted { $0.ayahId < $1.ayahId }
                 }
             } catch {
+                if error is CancellationError || Task.isCancelled {
+                    throw error
+                }
                 continue
             }
         }
@@ -189,10 +192,12 @@ struct ItqanTimingProvider: VerseTimingProvider {
         }
 
         let medianDuration = durations[durations.count / 2]
+        let maxEnd = rawPairs.map(\.end).max() ?? 0
 
         // Verse durations in seconds are typically single-digit values.
         // Durations in milliseconds are usually hundreds or thousands.
-        return medianDuration > 50 ? (1.0 / 1000.0) : 1.0
+        let usesMilliseconds = medianDuration > 300 || maxEnd > 600_000
+        return usesMilliseconds ? (1.0 / 1000.0) : 1.0
     }
 
     private func explicitTimeUnit(from rootObject: Any, entries: [[String: Any]]) -> String? {
