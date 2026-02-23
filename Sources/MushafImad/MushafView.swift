@@ -220,11 +220,27 @@ public struct MushafView: View {
         ?? staticHighlightedVerse
         
         Group {
-            switch scrollingMode {
-            case .automatic:
-                verticalPageView(currentHighlight: currentHighlight)
-            case .horizontal:
+            if displayMode == .text {
+                MushafTextView(
+                    initialChapter: textModeInitialChapter,
+                    highlightedVerse: currentHighlight,
+                    selectedVerse: $viewModel.selectedVerse,
+                    onVerseLongPress: { verse in
+                        if let handler = externalLongPressHandler {
+                            viewModel.selectedVerse = nil
+                            highlightedVerseBinding?.wrappedValue = nil
+                            handler(verse)
+                        } else {
+                            viewModel.showVerseDetails(verse)
+                            highlightedVerseBinding?.wrappedValue = verse
+                        }
+                    },
+                    fontSize: textFontSize
+                )
+            } else if scrollingMode == .horizontal {
                 horizontalPageView(currentHighlight: currentHighlight)
+            } else {
+                verticalPageView(currentHighlight: currentHighlight)
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
