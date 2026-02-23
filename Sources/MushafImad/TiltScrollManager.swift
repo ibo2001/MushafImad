@@ -33,6 +33,8 @@ public class TiltScrollManager: ObservableObject {
     private var scrollAxis: ScrollAxis = .vertical
     
     private var scrollVelocity: CGFloat = 0
+    private let speedMultiplier: CGFloat = 0.35
+    private let maxVelocity: CGFloat = 14
     
     public init() {
         settingsCancellable = NotificationCenter.default
@@ -146,6 +148,9 @@ public class TiltScrollManager: ObservableObject {
             let delta = (centerAngle - tolerance) - tiltAngle
             targetVelocity = -CGFloat(delta * sensitivity * scale)
         }
+
+        targetVelocity *= speedMultiplier
+        targetVelocity = max(-maxVelocity, min(targetVelocity, maxVelocity))
         
         
         // Smooth the velocity
