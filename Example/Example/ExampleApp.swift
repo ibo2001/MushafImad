@@ -31,6 +31,15 @@ struct ExampleApp: App {
         .windowStyle(.hiddenTitleBar)
         .defaultSize(width: 1200, height: 800)
         #endif
+
+        #if os(macOS)
+        MenuBarExtra {
+            MenuBarPlayerView()
+        } label: {
+            Image(systemName: "book.fill")
+        }
+        .menuBarExtraStyle(.window)
+        #endif
     }
 }
 

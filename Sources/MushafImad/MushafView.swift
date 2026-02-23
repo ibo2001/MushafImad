@@ -14,7 +14,7 @@ public enum ReadingTheme: String, CaseIterable {
     case calm
     case night
     case white
-    
+
     public var color: Color {
         switch self {
         case .comfortable:
@@ -27,7 +27,7 @@ public enum ReadingTheme: String, CaseIterable {
             return Color(hex: "#FFFFFF")
         }
     }
-    
+
     public var title: String {
         switch self {
         case .comfortable:
@@ -42,11 +42,17 @@ public enum ReadingTheme: String, CaseIterable {
     }
 }
 
+/// Controls whether the reader shows image-based pages or text-based verses.
+public enum DisplayMode: String, CaseIterable {
+    case image
+    case text
+}
+
 /// Layout options that control how Mushaf pages are paged through.
 public enum ScrollingMode: String, CaseIterable {
     case automatic
     case horizontal
-    
+
     public var title: String {
         switch self {
         case .automatic:
@@ -66,7 +72,7 @@ public struct MushafView: View {
     private let highlightedVerseBinding: Binding<Verse?>?
     private let externalLongPressHandler: ((Verse) -> Void)?
     private let externalPageTapHandler: (() -> Void)?
-    
+
     @State private var viewModel = ViewModel()
     @StateObject private var playerViewModel = QuranPlayerViewModel()
     @EnvironmentObject private var reciterService: ReciterService
@@ -79,8 +85,11 @@ public struct MushafView: View {
 #endif
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
-    
-    
+    @AppStorage("display_mode") private var displayMode: DisplayMode = .image
+    @AppStorage("text_font_size") private var textFontSize: Double = 24.0
+    @State private var textModeInitialChapter: Int = 1
+
+
     public init(initialPage: Int? = nil,
                 highlightedVerse: Verse? = nil,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
@@ -92,7 +101,7 @@ public struct MushafView: View {
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
-    
+
     public init(initialPage: Int? = nil,
                 highlightedVerse: Binding<Verse?>,
                 onVerseLongPress: ((Verse) -> Void)? = nil,
@@ -104,7 +113,7 @@ public struct MushafView: View {
         self.externalLongPressHandler = onVerseLongPress
         self.externalPageTapHandler = onPageTap
     }
-    
+
     public var body: some View {
         ZStack {
             readingTheme.color.ignoresSafeArea()
@@ -113,20 +122,56 @@ public struct MushafView: View {
             } else {
                 pageView
                     .foregroundStyle(.naturalBlack)
-                
             }
         }
         .environment(\.colorScheme, readingTheme == .night ? .dark : .light)
         .opacity(viewModel.contentOpacity)
         .onChange(of: viewModel.scrollPosition) { oldPage, newPage in
             guard let newPage = newPage else { return }
-            
             Task {
                 await viewModel.handlePageChange(from: oldPage, to: newPage)
             }
         }
         .task {
             await viewModel.initializePageView(initialPage: initialPage)
+        }
+        .onAppear {
+            if displayMode == .text {
+                let page = viewModel.scrollPosition ?? initialPage ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+            }
+        }
+        .onChange(of: displayMode) { _, newMode in
+            if newMode == .text {
+                let page = viewModel.scrollPosition ?? initialPage ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+            }
+        }
+        .toolbar {
+            ToolbarItemGroup(placement: .topBarTrailing) {
+                if displayMode == .text {
+                    Menu {
+                        ForEach([16.0, 20.0, 24.0, 28.0, 32.0, 36.0], id: \.self) { size in
+                            Button {
+                                textFontSize = size
+                            } label: {
+                                if abs(textFontSize - size) < 0.5 {
+                                    Label("\(Int(size))pt", systemImage: "checkmark")
+                                } else {
+                                    Text("\(Int(size))pt")
+                                }
+                            }
+                        }
+                    } label: {
+                        Image(systemName: "textformat.size")
+                    }
+                }
+                Button {
+                    displayMode = (displayMode == .image) ? .text : .image
+                } label: {
+                    Image(systemName: displayMode == .image ? "text.justify.leading" : "book.pages")
+                }
+            }
         }
         .onChange(of: playerViewModel.playbackState) { oldState, newState in
             // Clear highlighting when playback stops
@@ -150,7 +195,7 @@ public struct MushafView: View {
                     )
                     playerViewModel.startIfNeeded(autoPlay: true)
                 }
-                
+
             default:
                 break
             }
@@ -211,7 +256,7 @@ public struct MushafView: View {
         )
 #endif
     }
-    
+
     public func verticalPageView(currentHighlight: Verse?) -> some View {
         GeometryReader { geometry in
             let scrollBinding = Binding(
@@ -221,7 +266,7 @@ public struct MushafView: View {
                     viewModel.scrollPosition = newValue
                 }
             )
-            
+
             ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(spacing: 0) {
                     ForEach(1...604, id: \.self) { pageNumber in
@@ -247,7 +292,7 @@ public struct MushafView: View {
             .ignoresSafeArea(.container, edges: [.top, .bottom])
         }
     }
-    
+
     public func pageContent(for pageNumber: Int, highlight: Verse?) -> some View {
         PageContainer(
             pageNumber: pageNumber,

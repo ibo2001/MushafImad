@@ -50,3 +50,10 @@ fastlane/test_output
 
 # Build server configuration (auto-generated)
 buildServer.json
+
+#AI
+copilot-instructions.md
+
+# Node.js (not used — prevent accidental commits)
+package-lock.json
+node_modules/
