@@ -30,7 +30,7 @@ public class TiltScrollManager: ObservableObject {
     @AppStorage("tilt_sensitivity") public var sensitivity: Double = 5.0
     
     private weak var scrollView: UIScrollView?
-    private var scrollAxis: ScrollAxis = .horizontal
+    private var scrollAxis: ScrollAxis = .vertical
     
     private var scrollVelocity: CGFloat = 0
     
@@ -120,12 +120,24 @@ public class TiltScrollManager: ObservableObject {
     private func processMotion(_ motion: CMDeviceMotion) {
         let pitch = motion.attitude.pitch
         let roll = motion.attitude.roll
-        let tiltAngle = (scrollAxis == .vertical) ? pitch : roll
+        let tiltAngle: Double
+        let centerAngle: Double
+        let tolerance: Double
+        let scale: Double
+
+        if scrollAxis == .vertical {
+            tiltAngle = pitch
+            centerAngle = 25.0 * .pi / 180.0
+            tolerance = 10.0 * .pi / 180.0
+            scale = 50.0
+        } else {
+            tiltAngle = roll
+            centerAngle = 0.0
+            tolerance = 5.0 * .pi / 180.0
+            scale = 80.0
+        }
+
         var targetVelocity: CGFloat = 0
-        let centerAngle = (scrollAxis == .vertical) ? 25.0 * .pi / 180.0 : 0.0
-        let tolerance = (scrollAxis == .vertical) ? 10.0 * .pi / 180.0 : 6.0 * .pi / 180.0
-        let scale = (scrollAxis == .vertical) ? 50.0 : 80.0
-        
         
         if tiltAngle > (centerAngle + tolerance) {
             let delta = tiltAngle - (centerAngle + tolerance)
@@ -133,8 +145,6 @@ public class TiltScrollManager: ObservableObject {
         } else if tiltAngle < (centerAngle - tolerance) {
             let delta = (centerAngle - tolerance) - tiltAngle
             targetVelocity = -CGFloat(delta * sensitivity * scale)
-        } else {
-            // print("[TiltScrollManager] Action: NONE (Deadzone)")
         }
         
         
@@ -163,7 +173,6 @@ public class TiltScrollManager: ObservableObject {
         }
         
         // print("[TiltScrollManager] Scrolling by \(scrollVelocity)")
-
         if scrollAxis == .vertical {
             let newOffset = CGPoint(
                 x: scrollView.contentOffset.x,
