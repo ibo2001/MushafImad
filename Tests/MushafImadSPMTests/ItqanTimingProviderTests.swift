@@ -98,3 +98,75 @@ final class MockURLProtocol: URLProtocol, @unchecked Sendable {
     #expect(timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0.0, endTime: 1.4))
     #expect(timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 1.4, endTime: 2.8))
 }
+
+@Test func itqanProviderKeepsLongSecondsPayloadWithoutRescaling() async throws {
+    let payload = """
+    {
+      "data": [
+        { "surah_id": 2, "ayah_id": 1, "start_time": 1200, "end_time": 1204 },
+        { "surah_id": 2, "ayah_id": 2, "start_time": 1204, "end_time": 1209 }
+      ]
+    }
+    """.data(using: .utf8)!
+
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [MockURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    MockURLProtocol.requestHandler = { request in
+        let response = HTTPURLResponse(
+            url: try #require(request.url),
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, payload)
+    }
+
+    let provider = ItqanTimingProvider(
+        baseURL: URL(string: "https://itqan.test")!,
+        endpointPaths: ["/api/v1/timings/verses"],
+        session: session
+    )
+
+    let timings = try await provider.fetchTiming(for: 1, surahId: 2)
+    #expect(timings.count == 2)
+    #expect(timings[0] == VerseTiming(surahId: 2, ayahId: 1, startTime: 1200, endTime: 1204))
+    #expect(timings[1] == VerseTiming(surahId: 2, ayahId: 2, startTime: 1204, endTime: 1209))
+}
+
+@Test func itqanProviderConvertsShortMillisecondsPayloadToSeconds() async throws {
+    let payload = """
+    {
+      "data": [
+        { "surah_id": 3, "ayah_id": 1, "start_time": 0, "end_time": 320 },
+        { "surah_id": 3, "ayah_id": 2, "start_time": 320, "end_time": 690 }
+      ]
+    }
+    """.data(using: .utf8)!
+
+    let configuration = URLSessionConfiguration.ephemeral
+    configuration.protocolClasses = [MockURLProtocol.self]
+    let session = URLSession(configuration: configuration)
+
+    MockURLProtocol.requestHandler = { request in
+        let response = HTTPURLResponse(
+            url: try #require(request.url),
+            statusCode: 200,
+            httpVersion: nil,
+            headerFields: ["Content-Type": "application/json"]
+        )!
+        return (response, payload)
+    }
+
+    let provider = ItqanTimingProvider(
+        baseURL: URL(string: "https://itqan.test")!,
+        endpointPaths: ["/api/v1/timings/verses"],
+        session: session
+    )
+
+    let timings = try await provider.fetchTiming(for: 1, surahId: 3)
+    #expect(timings.count == 2)
+    #expect(timings[0] == VerseTiming(surahId: 3, ayahId: 1, startTime: 0, endTime: 0.32))
+    #expect(timings[1] == VerseTiming(surahId: 3, ayahId: 2, startTime: 0.32, endTime: 0.69))
+}
