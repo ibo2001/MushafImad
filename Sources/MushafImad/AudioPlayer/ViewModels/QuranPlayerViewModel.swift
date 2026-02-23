@@ -55,6 +55,8 @@ public final class QuranPlayerViewModel: ObservableObject {
     private var endPlaybackObserver: Any?
     private var pendingSeekVerse: Int?
     private var pendingResumeVerse: Int?
+    private var prefetchTask: Task<Void, Never>?
+    private var lastPrefetchKey: String?
 
     private var shouldResumeAfterSeek = false
     private var shouldAutoStart = true
@@ -122,7 +124,7 @@ public final class QuranPlayerViewModel: ObservableObject {
             updateChapter(number: chapterNumber, name: chapterName)
         }
 
-        if chapterChanged || reciterId != nil {
+        if !chapterChanged, reciterId != nil {
             prefetchChapterTimingIfNeeded()
         }
 
@@ -443,8 +445,22 @@ public final class QuranPlayerViewModel: ObservableObject {
         guard chapterNumber > 0, reciterId > 0 else { return }
         let currentReciterId = reciterId
         let currentChapterNumber = chapterNumber
-        Task {
+        let prefetchKey = "\(currentReciterId)-\(currentChapterNumber)"
+
+        if lastPrefetchKey == prefetchKey, prefetchTask != nil {
+            return
+        }
+
+        prefetchTask?.cancel()
+        lastPrefetchKey = prefetchKey
+        prefetchTask = Task { [weak self] in
             await AyahTimingService.shared.refreshChapterTimings(for: currentReciterId, surahId: currentChapterNumber)
+            await MainActor.run {
+                guard let self else { return }
+                if self.lastPrefetchKey == prefetchKey {
+                    self.prefetchTask = nil
+                }
+            }
         }
     }
 
@@ -571,5 +587,8 @@ public final class QuranPlayerViewModel: ObservableObject {
         player?.pause()
         player = nil
         isBuffering = false
+        prefetchTask?.cancel()
+        prefetchTask = nil
+        lastPrefetchKey = nil
     }
 }

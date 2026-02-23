@@ -72,6 +72,14 @@ struct ItqanTimingProvider: VerseTimingProvider {
             throw TimingProviderError.unsupportedSchema
         }
 
+        let rawTimes = entries.flatMap { entry -> [Double] in
+            let start = doubleValue(in: entry, keys: ["startTime", "start_time", "start", "from"])
+            let end = doubleValue(in: entry, keys: ["endTime", "end_time", "end", "to"])
+            return [start, end].compactMap { $0 }
+        }
+        let maxRawTime = rawTimes.max() ?? 0
+        let scaleFactor = maxRawTime >= 1000 ? 1.0 / 1000.0 : 1.0
+
         let timings = entries.compactMap { entry -> VerseTiming? in
             guard let ayahId = intValue(in: entry, keys: ["ayahId", "ayah_id", "ayah", "aya", "verse", "verse_id", "verseNumber"]) else {
                 return nil
@@ -86,8 +94,8 @@ struct ItqanTimingProvider: VerseTimingProvider {
             return VerseTiming(
                 surahId: surahId,
                 ayahId: ayahId,
-                startTime: normalizedTime(rawStart),
-                endTime: normalizedTime(rawEnd)
+                startTime: normalizedTime(rawStart, scale: scaleFactor),
+                endTime: normalizedTime(rawEnd, scale: scaleFactor)
             )
         }
 
@@ -139,8 +147,7 @@ struct ItqanTimingProvider: VerseTimingProvider {
         return nil
     }
 
-    private func normalizedTime(_ rawValue: Double) -> TimeInterval {
-        // Support both milliseconds and seconds payloads.
-        rawValue > 10_000 ? rawValue / 1000.0 : rawValue
+    private func normalizedTime(_ rawValue: Double, scale: Double) -> TimeInterval {
+        rawValue * scale
     }
 }

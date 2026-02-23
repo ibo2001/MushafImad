@@ -51,6 +51,12 @@ public final class AyahTimingService {
                     }
                     map[chapter.id] = chapterMap
                 }
+                if let existingMap = timingMaps[reciterId] {
+                    // Preserve any chapters refreshed from remote providers.
+                    for (chapterId, chapterTimings) in existingMap {
+                        map[chapterId] = chapterTimings
+                    }
+                }
                 timingMaps[reciterId] = map
             } catch {
                 AppLogger.shared.error("AyahTimingService: Error loading timing for reciter \(reciterId): \(error)",category: .network)

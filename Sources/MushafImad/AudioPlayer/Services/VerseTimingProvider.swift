@@ -5,7 +5,7 @@ protocol VerseTimingProvider: Sendable {
     func fetchTiming(for reciterId: Int, surahId: Int) async throws -> [VerseTiming]
 }
 
-enum TimingProviderError: Error, Equatable {
+public enum TimingProviderError: Error, Equatable {
     case invalidURL
     case invalidResponse
     case missingData
