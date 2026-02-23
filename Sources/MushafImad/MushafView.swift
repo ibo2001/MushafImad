@@ -219,21 +219,15 @@ public struct MushafView: View {
         ?? highlightedVerseBinding?.wrappedValue
         ?? staticHighlightedVerse
         
-        GeometryReader { geometry in
-            Group {
-                if shouldUseVerticalLayout(for: geometry.size) {
-                    verticalPageView(currentHighlight: currentHighlight)
-                } else {
-                    horizontalPageView(currentHighlight: currentHighlight)
-                }
+        Group {
+            switch scrollingMode {
+            case .automatic:
+                verticalPageView(currentHighlight: currentHighlight)
+            case .horizontal:
+                horizontalPageView(currentHighlight: currentHighlight)
             }
         }
         .environment(\.layoutDirection, .rightToLeft)
-    }
-
-    private func shouldUseVerticalLayout(for size: CGSize) -> Bool {
-        guard scrollingMode == .automatic else { return false }
-        return size.width > size.height
     }
     
     public func horizontalPageView(currentHighlight: Verse?) -> some View {
@@ -249,7 +243,7 @@ public struct MushafView: View {
 #endif
 #if canImport(UIKit)
         .background(
-            ScrollViewIntrospector { scrollView in
+            ScrollViewIntrospector(axisHint: .horizontal, prefersPaging: true) { scrollView in
                 tiltManager.setScrollAxis(.horizontal)
                 tiltManager.setScrollView(scrollView)
             }
@@ -280,7 +274,7 @@ public struct MushafView: View {
                 .scrollTargetLayout()
 #if canImport(UIKit)
                 .background(
-                    ScrollViewIntrospector { scrollView in
+                    ScrollViewIntrospector(axisHint: .vertical) { scrollView in
                         tiltManager.setScrollAxis(.vertical)
                         tiltManager.setScrollView(scrollView)
                     }
