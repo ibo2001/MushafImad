@@ -7,6 +7,7 @@ public final class AyahTimingService {
     
     private var reciterTimings: [Int: ReciterTiming] = [:]
     private var timingMaps: [Int: [Int: [Int: (start: Int, end: Int)]]] = [:]
+    private let timingManager = TimingManager()
     
     private init() {}
     
@@ -64,6 +65,35 @@ public final class AyahTimingService {
         loadTiming(for: reciterId)
         return timingMaps[reciterId]?[surahId]?[ayahId]
     }
+
+    /// Refreshes chapter timing using multi-source providers (Itqan -> MP3Quran fallback)
+    /// and updates the local in-memory map used by playback controls.
+    public func refreshChapterTimings(for reciterId: Int, surahId: Int) async {
+        do {
+            let timings = try await timingManager.getTiming(reciterId: reciterId, surahId: surahId)
+            guard !timings.isEmpty else { return }
+
+            var reciterMap = timingMaps[reciterId] ?? [:]
+            var chapterMap: [Int: (start: Int, end: Int)] = [:]
+
+            for timing in timings {
+                chapterMap[timing.ayahId] = (
+                    Int((timing.startTime * 1000.0).rounded()),
+                    Int((timing.endTime * 1000.0).rounded())
+                )
+            }
+
+            reciterMap[surahId] = chapterMap
+            timingMaps[reciterId] = reciterMap
+        } catch {
+            // Keep existing bundled fallback behavior through loadTiming()
+            AppLogger.shared.warn(
+                "AyahTimingService: Multi-source refresh failed for reciter \(reciterId), surah \(surahId): \(error.localizedDescription)",
+                category: .network
+            )
+            loadTiming(for: reciterId)
+        }
+    }
     
     public func getReciter(id: Int) -> ReciterTiming? {
         loadTiming(for: id)
@@ -86,44 +116,45 @@ public final class AyahTimingService {
     /// Get the current verse number based on playback time (in milliseconds)
     public func getCurrentVerse(for reciterId: Int, surahId: Int, currentTimeMs: Int) -> Int? {
         loadTiming(for: reciterId)
-        
-        // Get the chapter timing data
-        guard let reciter = reciterTimings[reciterId],
-              let chapter = reciter.chapters.first(where: { $0.id == surahId }) else {
+
+        guard let chapterMap = timingMaps[reciterId]?[surahId], !chapterMap.isEmpty else {
             return nil
         }
-        
+
+        let timings = chapterMap.map { (ayah: $0.key, start: $0.value.start, end: $0.value.end) }
+
         // Some timing JSON files appear to have ~+10ms on verse start times.
         // Apply a small negative offset so verse highlighting aligns with playback.
         let startTimeCorrectionMs = 10
 
         // Find the verse that contains the current time
         // Iterate in reverse so we prefer the later verse at boundaries/overlaps
-        for timing in chapter.aya_timing.reversed() {
-            let adjustedStart = max(0, timing.start_time - startTimeCorrectionMs)
-            if currentTimeMs >= adjustedStart && currentTimeMs <= timing.end_time {
+        for timing in timings.sorted(by: { $0.start > $1.start }) {
+            let adjustedStart = max(0, timing.start - startTimeCorrectionMs)
+            if currentTimeMs >= adjustedStart && currentTimeMs <= timing.end {
                 return timing.ayah
             }
         }
-        
+
         // If we're past all verses, return the last verse
-        if let lastVerse = chapter.aya_timing.last,
-           currentTimeMs > lastVerse.end_time {
+        if let lastVerse = timings.max(by: { $0.end < $1.end }),
+           currentTimeMs > lastVerse.end {
             return lastVerse.ayah
         }
-        
+
         return nil
     }
     
     /// Get all verse timings for a chapter
     public func getChapterTimings(for reciterId: Int, surahId: Int) -> [(ayah: Int, start: Int, end: Int)]? {
         loadTiming(for: reciterId)
-        
-        guard let reciter = reciterTimings[reciterId],
-              let chapter = reciter.chapters.first(where: { $0.id == surahId }) else {
+
+        guard let chapterMap = timingMaps[reciterId]?[surahId], !chapterMap.isEmpty else {
             return nil
         }
-        
-        return chapter.aya_timing.map { (ayah: $0.ayah, start: $0.start_time, end: $0.end_time) }
+
+        return chapterMap
+            .map { (ayah: $0.key, start: $0.value.start, end: $0.value.end) }
+            .sorted { $0.ayah < $1.ayah }
     }
 }

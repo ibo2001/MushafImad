@@ -122,6 +122,10 @@ public final class QuranPlayerViewModel: ObservableObject {
             updateChapter(number: chapterNumber, name: chapterName)
         }
 
+        if chapterChanged || reciterId != nil {
+            prefetchChapterTimingIfNeeded()
+        }
+
         return baseURLChanged || chapterChanged || reciterChanged || reciterId != nil
     }
 
@@ -160,6 +164,7 @@ public final class QuranPlayerViewModel: ObservableObject {
         chapterNumber = number
         chapterNameInternal = name
         stop()
+        prefetchChapterTimingIfNeeded()
     }
     
     public func updateReciter(baseURL: URL, reciterName: String, reciterId: Int? = nil) {
@@ -176,6 +181,8 @@ public final class QuranPlayerViewModel: ObservableObject {
         if let reciterId {
             self.reciterId = reciterId
         }
+
+        prefetchChapterTimingIfNeeded()
 
         pendingSeekVerse = nil
 
@@ -411,6 +418,7 @@ public final class QuranPlayerViewModel: ObservableObject {
 
         playbackState = .loading
         shouldAutoStart = autoPlay
+        prefetchChapterTimingIfNeeded()
 
         let chapterPathComponent = String(format: "%03d.mp3", chapterNumber)
         let audioURL = baseURL.appendingPathComponent(chapterPathComponent)
@@ -429,6 +437,15 @@ public final class QuranPlayerViewModel: ObservableObject {
         observeTimeControl(for: player)
         observePeriodicTime(for: player)
         observeCompletion(for: playerItem)
+    }
+
+    private func prefetchChapterTimingIfNeeded() {
+        guard chapterNumber > 0, reciterId > 0 else { return }
+        let currentReciterId = reciterId
+        let currentChapterNumber = chapterNumber
+        Task {
+            await AyahTimingService.shared.refreshChapterTimings(for: currentReciterId, surahId: currentChapterNumber)
+        }
     }
 
     private func observeStatus(for item: AVPlayerItem) {
@@ -556,5 +573,3 @@ public final class QuranPlayerViewModel: ObservableObject {
         isBuffering = false
     }
 }
-
-
