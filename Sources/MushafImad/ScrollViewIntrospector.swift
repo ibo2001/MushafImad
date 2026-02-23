@@ -10,8 +10,25 @@ import SwiftUI
 import UIKit
 /// A helper view that finds the nearest ancestor UIScrollView and passes it to a completion handler.
 struct ScrollViewIntrospector: UIViewRepresentable {
+    enum AxisHint {
+        case horizontal
+        case vertical
+    }
+
     let onFind: (UIScrollView) -> Void
+    let axisHint: AxisHint?
+    let prefersPaging: Bool
     class Coordinator { var didFind = false }
+
+    init(
+        axisHint: AxisHint? = nil,
+        prefersPaging: Bool = false,
+        onFind: @escaping (UIScrollView) -> Void
+    ) {
+        self.axisHint = axisHint
+        self.prefersPaging = prefersPaging
+        self.onFind = onFind
+    }
     
     func makeUIView(context: Context) -> UIView {
         let view = UIView()
@@ -25,7 +42,7 @@ struct ScrollViewIntrospector: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
             guard !context.coordinator.didFind else { return }
-            if let scrollView = self.findAncestorScrollView(of: uiView) {
+            if let scrollView = self.findAncestorScrollView(of: uiView) ?? self.findBestScrollView(from: uiView) {
                 context.coordinator.didFind = true
                 onFind(scrollView)
             }
@@ -35,12 +52,54 @@ struct ScrollViewIntrospector: UIViewRepresentable {
     private func findAncestorScrollView(of view: UIView) -> UIScrollView? {
         var current = view
         while let superview = current.superview {
-            if let scrollView = superview as? UIScrollView {
+            if let scrollView = superview as? UIScrollView, matchesHint(scrollView) {
                 return scrollView
             }
             current = superview
         }
         return nil
+    }
+
+    private func findBestScrollView(from view: UIView) -> UIScrollView? {
+        guard let rootView = view.window else { return nil }
+        let candidates = collectScrollViews(in: rootView).filter { matchesHint($0) }
+        return candidates.max(by: { score(for: $0) < score(for: $1) })
+    }
+
+    private func collectScrollViews(in root: UIView) -> [UIScrollView] {
+        var result: [UIScrollView] = []
+
+        if let scrollView = root as? UIScrollView {
+            result.append(scrollView)
+        }
+
+        for child in root.subviews {
+            result.append(contentsOf: collectScrollViews(in: child))
+        }
+
+        return result
+    }
+
+    private func matchesHint(_ scrollView: UIScrollView) -> Bool {
+        if prefersPaging, !scrollView.isPagingEnabled {
+            return false
+        }
+
+        guard let axisHint else { return true }
+        switch axisHint {
+        case .horizontal:
+            return scrollView.contentSize.width > scrollView.bounds.width + 1
+        case .vertical:
+            return scrollView.contentSize.height > scrollView.bounds.height + 1
+        }
+    }
+
+    private func score(for scrollView: UIScrollView) -> CGFloat {
+        var value: CGFloat = 0
+        if scrollView.isPagingEnabled { value += 10_000 }
+        if scrollView.isScrollEnabled { value += 500 }
+        value += scrollView.bounds.width * scrollView.bounds.height
+        return value
     }
 }
 #endif
