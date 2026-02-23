@@ -18,7 +18,10 @@ struct ScrollViewIntrospector: UIViewRepresentable {
     let onFind: (UIScrollView) -> Void
     let axisHint: AxisHint?
     let prefersPaging: Bool
-    class Coordinator { var didFind = false }
+    class Coordinator {
+        var didFind = false
+        var isRetrying = false
+    }
 
     init(
         axisHint: AxisHint? = nil,
@@ -42,10 +45,26 @@ struct ScrollViewIntrospector: UIViewRepresentable {
     func updateUIView(_ uiView: UIView, context: Context) {
         DispatchQueue.main.async {
             guard !context.coordinator.didFind else { return }
-            if let scrollView = self.findAncestorScrollView(of: uiView) ?? self.findBestScrollView(from: uiView) {
-                context.coordinator.didFind = true
-                onFind(scrollView)
-            }
+            self.resolveScrollView(from: uiView, coordinator: context.coordinator, attemptsRemaining: 20)
+        }
+    }
+
+    private func resolveScrollView(from view: UIView, coordinator: Coordinator, attemptsRemaining: Int) {
+        guard !coordinator.didFind else { return }
+
+        if let scrollView = findAncestorScrollView(of: view) ?? findBestScrollView(from: view) {
+            coordinator.didFind = true
+            coordinator.isRetrying = false
+            onFind(scrollView)
+            return
+        }
+
+        guard attemptsRemaining > 0, !coordinator.isRetrying else { return }
+        coordinator.isRetrying = true
+
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
+            coordinator.isRetrying = false
+            self.resolveScrollView(from: view, coordinator: coordinator, attemptsRemaining: attemptsRemaining - 1)
         }
     }
     
