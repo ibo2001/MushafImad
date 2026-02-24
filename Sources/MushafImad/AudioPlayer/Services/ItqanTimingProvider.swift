@@ -52,9 +52,7 @@ struct ItqanTimingProvider: VerseTimingProvider {
 
         components.queryItems = [
             URLQueryItem(name: "reciterId", value: String(reciterId)),
-            URLQueryItem(name: "reciter_id", value: String(reciterId)),
-            URLQueryItem(name: "surahId", value: String(surahId)),
-            URLQueryItem(name: "surah_id", value: String(surahId))
+            URLQueryItem(name: "surahId", value: String(surahId))
         ]
 
         guard let url = components.url else {
@@ -75,8 +73,6 @@ struct ItqanTimingProvider: VerseTimingProvider {
             throw TimingProviderError.unsupportedSchema
         }
 
-        let scaleFactor = detectScaleFactor(from: jsonObject, entries: entries)
-
         let timings = entries.compactMap { entry -> VerseTiming? in
             guard let ayahId = intValue(in: entry, keys: ["ayahId", "ayah_id", "ayah", "aya", "verse", "verse_id", "verseNumber"]) else {
                 return nil
@@ -91,8 +87,8 @@ struct ItqanTimingProvider: VerseTimingProvider {
             return VerseTiming(
                 surahId: surahId,
                 ayahId: ayahId,
-                startTime: normalizedTime(rawStart, scale: scaleFactor),
-                endTime: normalizedTime(rawEnd, scale: scaleFactor)
+                startTime: rawStart,
+                endTime: rawEnd
             )
         }
 
@@ -144,88 +140,4 @@ struct ItqanTimingProvider: VerseTimingProvider {
         return nil
     }
 
-    private func normalizedTime(_ rawValue: Double, scale: Double) -> TimeInterval {
-        rawValue * scale
-    }
-
-    private func detectScaleFactor(from rootObject: Any, entries: [[String: Any]]) -> Double {
-        if let explicitUnit = explicitTimeUnit(from: rootObject, entries: entries) {
-            switch explicitUnit {
-            case "ms", "millisecond", "milliseconds":
-                return 1.0 / 1000.0
-            case "s", "sec", "second", "seconds":
-                return 1.0
-            default:
-                break
-            }
-        }
-
-        let rawPairs = entries.compactMap { entry -> (start: Double, end: Double)? in
-            guard let start = doubleValue(in: entry, keys: ["startTime", "start_time", "start", "from"]),
-                  let end = doubleValue(in: entry, keys: ["endTime", "end_time", "end", "to"]) else {
-                return nil
-            }
-            return (start, end)
-        }
-
-        guard !rawPairs.isEmpty else {
-            return 1.0
-        }
-
-        let hasFractionalValues = rawPairs.contains { pair in
-            pair.start.truncatingRemainder(dividingBy: 1) != 0 ||
-            pair.end.truncatingRemainder(dividingBy: 1) != 0
-        }
-
-        // If values include fractions, they are very likely already seconds.
-        if hasFractionalValues {
-            return 1.0
-        }
-
-        let durations = rawPairs
-            .map { $0.end - $0.start }
-            .filter { $0 > 0 }
-            .sorted()
-
-        guard !durations.isEmpty else {
-            return 1.0
-        }
-
-        let medianDuration = durations[durations.count / 2]
-        let maxEnd = rawPairs.map(\.end).max() ?? 0
-
-        // Verse durations in seconds are typically single-digit values.
-        // Durations in milliseconds are usually hundreds or thousands.
-        let usesMilliseconds = medianDuration > 300 || maxEnd > 600_000
-        return usesMilliseconds ? (1.0 / 1000.0) : 1.0
-    }
-
-    private func explicitTimeUnit(from rootObject: Any, entries: [[String: Any]]) -> String? {
-        if let rootDict = rootObject as? [String: Any] {
-            if let unit = stringValue(in: rootDict, keys: ["timeUnit", "time_unit", "unit"]) {
-                return unit.lowercased()
-            }
-
-            if let meta = rootDict["meta"] as? [String: Any],
-               let unit = stringValue(in: meta, keys: ["timeUnit", "time_unit", "unit"]) {
-                return unit.lowercased()
-            }
-        }
-
-        if let firstEntry = entries.first,
-           let unit = stringValue(in: firstEntry, keys: ["timeUnit", "time_unit", "unit"]) {
-            return unit.lowercased()
-        }
-
-        return nil
-    }
-
-    private func stringValue(in dictionary: [String: Any], keys: [String]) -> String? {
-        for key in keys {
-            if let value = dictionary[key] as? String, !value.isEmpty {
-                return value
-            }
-        }
-        return nil
-    }
 }

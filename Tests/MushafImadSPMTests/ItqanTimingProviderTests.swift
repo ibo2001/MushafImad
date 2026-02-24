@@ -61,8 +61,8 @@ struct ItqanTimingProviderTests {
 
     let timings = try await provider.fetchTiming(for: 1, surahId: 1)
     #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0, endTime: 1.25))
-    #expect(timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 1.25, endTime: 2.5))
+    #expect(timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0, endTime: 1250))
+    #expect(timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 1250, endTime: 2500))
 }
 
 @Test func itqanProviderKeepsSecondsPayloadWithoutRescaling() async throws {
@@ -137,7 +137,7 @@ struct ItqanTimingProviderTests {
     #expect(timings[1] == VerseTiming(surahId: 2, ayahId: 2, startTime: 1204, endTime: 1209))
 }
 
-@Test func itqanProviderConvertsShortMillisecondsPayloadToSeconds() async throws {
+@Test func itqanProviderKeepsIntegerPayloadWithoutRescaling() async throws {
     let payload = """
     {
       "data": [
@@ -169,7 +169,7 @@ struct ItqanTimingProviderTests {
 
     let timings = try await provider.fetchTiming(for: 1, surahId: 3)
     #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 3, ayahId: 1, startTime: 0, endTime: 0.32))
-    #expect(timings[1] == VerseTiming(surahId: 3, ayahId: 2, startTime: 0.32, endTime: 0.69))
+    #expect(timings[0] == VerseTiming(surahId: 3, ayahId: 1, startTime: 0, endTime: 320))
+    #expect(timings[1] == VerseTiming(surahId: 3, ayahId: 2, startTime: 320, endTime: 690))
 }
 }
