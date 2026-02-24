@@ -1,143 +1,56 @@
 import Foundation
 
-/// Adapter that fetches verse timings from the Itqan API.
-struct ItqanTimingProvider: VerseTimingProvider {
-    private let baseURL: URL
-    private let endpointPaths: [String]
-    private let session: URLSession
+/// Provider backed by the Itqan API contract (`/recitations/{assetId}/`).
+actor ItqanTimingProvider: VerseTimingProvider {
+    private let apiClient: ItqanAPIClient
+    private var chapterCache: [String: ChapterTimingData] = [:]
 
-    init(
-        baseURL: URL = URL(string: "https://api.cms.itqan.dev")!,
-        endpointPaths: [String] = [
-            "/api/v1/timings/verses",
-            "/api/timings/verses",
-            "/timings/verses"
-        ],
-        session: URLSession = .shared
-    ) {
-        self.baseURL = baseURL
-        self.endpointPaths = endpointPaths
-        self.session = session
+    init(apiClient: ItqanAPIClient = ItqanAPIClient()) {
+        self.apiClient = apiClient
     }
 
-    func fetchTiming(for reciterId: Int, surahId: Int) async throws -> [VerseTiming] {
-        for path in endpointPaths {
-            do {
-                let request = try buildRequest(path: path, reciterId: reciterId, surahId: surahId)
-                let (data, response) = try await session.data(for: request)
-                guard let httpResponse = response as? HTTPURLResponse, (200...299).contains(httpResponse.statusCode) else {
-                    continue
-                }
+    func fetchChapterData(for reciterId: Int, surahId: Int) async throws -> ChapterTimingData {
+        guard let assetId = ReciterDataProvider.itqanAssetId(for: reciterId) else {
+            throw TimingProviderError.unsupportedTimingSource
+        }
 
-                let timings = try parseTimings(from: data, fallbackSurahId: surahId)
-                if !timings.isEmpty {
-                    return timings.sorted { $0.ayahId < $1.ayahId }
-                }
-            } catch {
-                if error is CancellationError || Task.isCancelled {
-                    throw error
-                }
-                continue
+        let cacheKey = "\(assetId)-\(surahId)"
+        if let cached = chapterCache[cacheKey] {
+            if cached.timings.isEmpty {
+                throw TimingProviderError.missingData
             }
+            return cached
         }
 
-        throw TimingProviderError.missingData
-    }
-
-    private func buildRequest(path: String, reciterId: Int, surahId: Int) throws -> URLRequest {
-        let endpoint = baseURL.appendingPathComponent(path.trimmingCharacters(in: CharacterSet(charactersIn: "/")))
-        guard var components = URLComponents(url: endpoint, resolvingAgainstBaseURL: false) else {
-            throw TimingProviderError.invalidURL
+        let tracks = try await apiClient.fetchSurahTracks(assetId: assetId)
+        guard let track = tracks.first(where: { $0.surahNumber == surahId }) else {
+            chapterCache[cacheKey] = ChapterTimingData(timings: [], audioURL: nil)
+            throw TimingProviderError.missingData
         }
 
-        components.queryItems = [
-            URLQueryItem(name: "reciterId", value: String(reciterId)),
-            URLQueryItem(name: "surahId", value: String(surahId))
-        ]
-
-        guard let url = components.url else {
-            throw TimingProviderError.invalidURL
-        }
-
-        var request = URLRequest(url: url)
-        request.httpMethod = "GET"
-        request.setValue("application/json", forHTTPHeaderField: "Accept")
-        request.timeoutInterval = 12
-        return request
-    }
-
-    private func parseTimings(from data: Data, fallbackSurahId: Int) throws -> [VerseTiming] {
-        let jsonObject = try JSONSerialization.jsonObject(with: data)
-        let entries = extractEntries(from: jsonObject)
-        guard !entries.isEmpty else {
-            throw TimingProviderError.unsupportedSchema
-        }
-
-        let timings = entries.compactMap { entry -> VerseTiming? in
-            guard let ayahId = intValue(in: entry, keys: ["ayahId", "ayah_id", "ayah", "aya", "verse", "verse_id", "verseNumber"]) else {
+        let timings = track.ayahsTimings.compactMap { timing -> VerseTiming? in
+            let parts = timing.ayahKey.split(separator: ":")
+            guard parts.count == 2,
+                  let trackSurahId = Int(parts[0]),
+                  let ayahId = Int(parts[1]) else {
                 return nil
             }
 
-            guard let rawStart = doubleValue(in: entry, keys: ["startTime", "start_time", "start", "from"]),
-                  let rawEnd = doubleValue(in: entry, keys: ["endTime", "end_time", "end", "to"]) else {
-                return nil
-            }
-
-            let surahId = intValue(in: entry, keys: ["surahId", "surah_id", "sura", "sura_id", "chapter_id"]) ?? fallbackSurahId
             return VerseTiming(
-                surahId: surahId,
+                surahId: trackSurahId,
                 ayahId: ayahId,
-                startTime: rawStart,
-                endTime: rawEnd
+                startTime: Double(timing.startMs) / 1000.0,
+                endTime: Double(timing.endMs) / 1000.0
             )
         }
+        .sorted { $0.ayahId < $1.ayahId }
+
+        let chapterData = ChapterTimingData(timings: timings, audioURL: track.audioURL)
+        chapterCache[cacheKey] = chapterData
 
         if timings.isEmpty {
-            throw TimingProviderError.unsupportedSchema
+            throw TimingProviderError.missingData
         }
-        return timings
+        return chapterData
     }
-
-    private func extractEntries(from object: Any) -> [[String: Any]] {
-        if let list = object as? [[String: Any]] {
-            return list
-        }
-
-        guard let dictionary = object as? [String: Any] else {
-            return []
-        }
-
-        let candidateKeys = ["data", "result", "results", "timings", "items", "verses", "ayah_timings", "ayahTiming"]
-        for key in candidateKeys {
-            if let nested = dictionary[key] as? [[String: Any]] {
-                return nested
-            }
-            if let nestedDict = dictionary[key] as? [String: Any],
-               let nested = nestedDict["items"] as? [[String: Any]] {
-                return nested
-            }
-        }
-
-        return []
-    }
-
-    private func intValue(in dictionary: [String: Any], keys: [String]) -> Int? {
-        for key in keys {
-            if let value = dictionary[key] as? Int { return value }
-            if let value = dictionary[key] as? NSNumber { return value.intValue }
-            if let value = dictionary[key] as? String, let intValue = Int(value) { return intValue }
-        }
-        return nil
-    }
-
-    private func doubleValue(in dictionary: [String: Any], keys: [String]) -> Double? {
-        for key in keys {
-            if let value = dictionary[key] as? Double { return value }
-            if let value = dictionary[key] as? Int { return Double(value) }
-            if let value = dictionary[key] as? NSNumber { return value.doubleValue }
-            if let value = dictionary[key] as? String, let doubleValue = Double(value) { return doubleValue }
-        }
-        return nil
-    }
-
 }

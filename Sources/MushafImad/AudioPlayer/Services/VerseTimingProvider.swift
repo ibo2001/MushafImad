@@ -2,7 +2,13 @@ import Foundation
 
 /// Internal provider contract for verse timing data sources.
 protocol VerseTimingProvider: Sendable {
-    func fetchTiming(for reciterId: Int, surahId: Int) async throws -> [VerseTiming]
+    func fetchChapterData(for reciterId: Int, surahId: Int) async throws -> ChapterTimingData
+}
+
+/// Canonical chapter timing payload used by all timing providers.
+struct ChapterTimingData: Equatable, Sendable {
+    let timings: [VerseTiming]
+    let audioURL: URL?
 }
 
 public enum TimingProviderError: Error, Equatable {
@@ -10,4 +16,5 @@ public enum TimingProviderError: Error, Equatable {
     case invalidResponse
     case missingData
     case unsupportedSchema
+    case unsupportedTimingSource
 }

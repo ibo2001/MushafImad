@@ -79,7 +79,8 @@ public struct QuranPlayer: View {
                 viewModel.updateReciter(
                     baseURL: baseURL,
                     reciterName: reciter.displayName,
-                    reciterId: reciter.id
+                    reciterId: reciter.id,
+                    timingSource: reciter.timingSource
                 )
             }
         }
@@ -131,7 +132,8 @@ public struct QuranPlayer: View {
                         viewModel.updateReciter(
                             baseURL: baseURL,
                             reciterName: reciter.displayName,
-                            reciterId: reciter.id
+                            reciterId: reciter.id,
+                            timingSource: reciter.timingSource
                         )
                     }
                 }

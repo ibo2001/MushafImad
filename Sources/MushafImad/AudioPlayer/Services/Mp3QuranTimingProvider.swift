@@ -2,7 +2,7 @@ import Foundation
 
 /// Adapter around the bundled MP3Quran timing JSON files.
 struct Mp3QuranTimingProvider: VerseTimingProvider {
-    func fetchTiming(for reciterId: Int, surahId: Int) async throws -> [VerseTiming] {
+    func fetchChapterData(for reciterId: Int, surahId: Int) async throws -> ChapterTimingData {
         guard let url = timingFileURL(for: reciterId) else {
             throw TimingProviderError.missingData
         }
@@ -25,7 +25,7 @@ struct Mp3QuranTimingProvider: VerseTimingProvider {
         guard !timings.isEmpty else {
             throw TimingProviderError.missingData
         }
-        return timings
+        return ChapterTimingData(timings: timings, audioURL: nil)
     }
 
     private func timingFileURL(for reciterId: Int) -> URL? {

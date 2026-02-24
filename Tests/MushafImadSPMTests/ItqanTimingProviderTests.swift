@@ -29,147 +29,86 @@ struct ItqanTimingProviderTests {
         override func stopLoading() {}
     }
 
-@Test func itqanProviderParsesWrappedDataPayload() async throws {
-    let payload = """
-    {
-      "data": [
-        { "surah_id": 1, "ayah_id": 1, "start_time": 0, "end_time": 1250 },
-        { "surah_id": 1, "ayah_id": 2, "start_time": 1250, "end_time": 2500 }
-      ]
-    }
-    """.data(using: .utf8)!
+    private func makeProvider(payload: Data) -> ItqanTimingProvider {
+        let configuration = URLSessionConfiguration.ephemeral
+        configuration.protocolClasses = [MockURLProtocol.self]
+        let session = URLSession(configuration: configuration)
+        let apiClient = ItqanAPIClient(baseURL: URL(string: "https://itqan.test")!, session: session, ttl: 60)
 
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
+        MockURLProtocol.requestHandler = { request in
+            let response = HTTPURLResponse(
+                url: try #require(request.url),
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, payload)
+        }
 
-    MockURLProtocol.requestHandler = { request in
-        let response = HTTPURLResponse(
-            url: try #require(request.url),
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        return (response, payload)
+        return ItqanTimingProvider(apiClient: apiClient)
     }
 
-    let provider = ItqanTimingProvider(
-        baseURL: URL(string: "https://itqan.test")!,
-        endpointPaths: ["/api/v1/timings/verses"],
-        session: session
-    )
+    @Test func itqanProviderParsesSurahTrackPayload() async throws {
+        let payload = """
+        {
+          "count": 114,
+          "next": null,
+          "previous": null,
+          "results": [
+            {
+              "surah_number": 1,
+              "surah_name": "Al-Fatihah",
+              "audio_url": "https://cdn.itqan.dev/assets/11/001.mp3",
+              "duration_ms": 54000,
+              "ayahs_count": 7,
+              "ayahs_timings": [
+                { "ayah_key": "1:1", "start_ms": 0, "end_ms": 5200 },
+                { "ayah_key": "1:2", "start_ms": 5200, "end_ms": 9800 }
+              ]
+            }
+          ]
+        }
+        """.data(using: .utf8)!
 
-    let timings = try await provider.fetchTiming(for: 1, surahId: 1)
-    #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0, endTime: 1250))
-    #expect(timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 1250, endTime: 2500))
-}
+        let provider = makeProvider(payload: payload)
+        let data = try await provider.fetchChapterData(for: 1001, surahId: 1)
 
-@Test func itqanProviderKeepsSecondsPayloadWithoutRescaling() async throws {
-    let payload = """
-    {
-      "data": [
-        { "surah_id": 1, "ayah_id": 1, "start_time": 0.0, "end_time": 1.4 },
-        { "surah_id": 1, "ayah_id": 2, "start_time": 1.4, "end_time": 2.8 }
-      ]
-    }
-    """.data(using: .utf8)!
-
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
-
-    MockURLProtocol.requestHandler = { request in
-        let response = HTTPURLResponse(
-            url: try #require(request.url),
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        return (response, payload)
+        #expect(data.timings.count == 2)
+        #expect(data.timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0.0, endTime: 5.2))
+        #expect(data.timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 5.2, endTime: 9.8))
+        #expect(data.audioURL == URL(string: "https://cdn.itqan.dev/assets/11/001.mp3"))
     }
 
-    let provider = ItqanTimingProvider(
-        baseURL: URL(string: "https://itqan.test")!,
-        endpointPaths: ["/api/v1/timings/verses"],
-        session: session
-    )
+    @Test func itqanProviderUsesAssetIdEndpoint() async throws {
+        let payload = """
+        { "count": 0, "next": null, "previous": null, "results": [] }
+        """.data(using: .utf8)!
 
-    let timings = try await provider.fetchTiming(for: 1, surahId: 1)
-    #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 1, ayahId: 1, startTime: 0.0, endTime: 1.4))
-    #expect(timings[1] == VerseTiming(surahId: 1, ayahId: 2, startTime: 1.4, endTime: 2.8))
-}
+        let provider = makeProvider(payload: payload)
 
-@Test func itqanProviderKeepsLongSecondsPayloadWithoutRescaling() async throws {
-    let payload = """
-    {
-      "data": [
-        { "surah_id": 2, "ayah_id": 1, "start_time": 1200, "end_time": 1204 },
-        { "surah_id": 2, "ayah_id": 2, "start_time": 1204, "end_time": 1209 }
-      ]
-    }
-    """.data(using: .utf8)!
+        MockURLProtocol.requestHandler = { request in
+            let url = try #require(request.url)
+            #expect(url.path.contains("/recitations/11/"))
+            #expect(url.query?.contains("page=1") == true)
+            #expect(url.query?.contains("page_size=114") == true)
+            let response = HTTPURLResponse(
+                url: url,
+                statusCode: 200,
+                httpVersion: nil,
+                headerFields: ["Content-Type": "application/json"]
+            )!
+            return (response, payload)
+        }
 
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
-
-    MockURLProtocol.requestHandler = { request in
-        let response = HTTPURLResponse(
-            url: try #require(request.url),
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        return (response, payload)
+        await #expect(throws: TimingProviderError.self) {
+            _ = try await provider.fetchChapterData(for: 1001, surahId: 1)
+        }
     }
 
-    let provider = ItqanTimingProvider(
-        baseURL: URL(string: "https://itqan.test")!,
-        endpointPaths: ["/api/v1/timings/verses"],
-        session: session
-    )
-
-    let timings = try await provider.fetchTiming(for: 1, surahId: 2)
-    #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 2, ayahId: 1, startTime: 1200, endTime: 1204))
-    #expect(timings[1] == VerseTiming(surahId: 2, ayahId: 2, startTime: 1204, endTime: 1209))
-}
-
-@Test func itqanProviderKeepsIntegerPayloadWithoutRescaling() async throws {
-    let payload = """
-    {
-      "data": [
-        { "surah_id": 3, "ayah_id": 1, "start_time": 0, "end_time": 320 },
-        { "surah_id": 3, "ayah_id": 2, "start_time": 320, "end_time": 690 }
-      ]
+    @Test func itqanProviderThrowsForNonItqanReciter() async {
+        let provider = makeProvider(payload: Data("{}".utf8))
+        await #expect(throws: TimingProviderError.self) {
+            _ = try await provider.fetchChapterData(for: 5, surahId: 1)
+        }
     }
-    """.data(using: .utf8)!
-
-    let configuration = URLSessionConfiguration.ephemeral
-    configuration.protocolClasses = [MockURLProtocol.self]
-    let session = URLSession(configuration: configuration)
-
-    MockURLProtocol.requestHandler = { request in
-        let response = HTTPURLResponse(
-            url: try #require(request.url),
-            statusCode: 200,
-            httpVersion: nil,
-            headerFields: ["Content-Type": "application/json"]
-        )!
-        return (response, payload)
-    }
-
-    let provider = ItqanTimingProvider(
-        baseURL: URL(string: "https://itqan.test")!,
-        endpointPaths: ["/api/v1/timings/verses"],
-        session: session
-    )
-
-    let timings = try await provider.fetchTiming(for: 1, surahId: 3)
-    #expect(timings.count == 2)
-    #expect(timings[0] == VerseTiming(surahId: 3, ayahId: 1, startTime: 0, endTime: 320))
-    #expect(timings[1] == VerseTiming(surahId: 3, ayahId: 2, startTime: 320, endTime: 690))
-}
 }

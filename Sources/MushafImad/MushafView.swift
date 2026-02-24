@@ -189,7 +189,8 @@ public struct MushafView: View {
                         chapterNumber: target.number,
                         chapterName: target.displayTitle,
                         reciterName: reciter.displayName,
-                        reciterId: reciter.id
+                        reciterId: reciter.id,
+                        timingSource: reciter.timingSource
                     )
                     playerViewModel.startIfNeeded(autoPlay: true)
                 }

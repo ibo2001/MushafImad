@@ -55,7 +55,8 @@ public struct PlayerViewUI: View {
                         chapterNumber: chapter.number,
                         chapterName: chapter.displayTitle,
                         reciterName: reciter.displayName,
-                        reciterId: reciter.id
+                        reciterId: reciter.id,
+                        timingSource: reciter.timingSource
                     )
                 }
             } else {
@@ -93,7 +94,8 @@ public struct PlayerViewUI: View {
             chapterNumber: target.number,
             chapterName: target.displayTitle,
             reciterName: reciter.displayName,
-            reciterId: reciter.id
+            reciterId: reciter.id,
+            timingSource: reciter.timingSource
         )
         playerViewModel.startIfNeeded(autoPlay: wasPlaying)
         if !wasPlaying {

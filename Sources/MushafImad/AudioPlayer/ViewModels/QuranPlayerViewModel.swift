@@ -47,6 +47,7 @@ public final class QuranPlayerViewModel: ObservableObject {
     private var chapterNameInternal: String
     private var reciterNameInternal: String
     private var reciterId: Int = 1
+    private var timingSource: TimingSource = .mp3quran
 
     private var player: AVPlayer?
     private var timeObserverToken: Any?
@@ -56,6 +57,7 @@ public final class QuranPlayerViewModel: ObservableObject {
     private var pendingSeekVerse: Int?
     private var pendingResumeVerse: Int?
     private var prefetchTask: Task<Void, Never>?
+    private var prepareTask: Task<Void, Never>?
     private var lastPrefetchKey: String?
 
     private var shouldResumeAfterSeek = false
@@ -99,14 +101,27 @@ public final class QuranPlayerViewModel: ObservableObject {
     }
 
     public var hasValidConfiguration: Bool {
-        baseURL != nil && chapterNumber > 0
+        chapterNumber > 0 && (timingSourceIsItqanOnly ? true : baseURL != nil)
+    }
+
+    private var timingSourceIsItqanOnly: Bool {
+        if case .itqan = timingSource { return true }
+        return false
     }
 
     @discardableResult
-    public func configureIfNeeded(baseURL: URL, chapterNumber: Int, chapterName: String, reciterName: String, reciterId: Int? = nil) -> Bool {
+    public func configureIfNeeded(
+        baseURL: URL,
+        chapterNumber: Int,
+        chapterName: String,
+        reciterName: String,
+        reciterId: Int? = nil,
+        timingSource: TimingSource? = nil
+    ) -> Bool {
         let baseURLChanged = self.baseURL != baseURL
         let chapterChanged = self.chapterNumber != chapterNumber || chapterNameInternal != chapterName
         let reciterChanged = reciterNameInternal != reciterName
+        let timingSourceChanged = timingSource.map { $0 != self.timingSource } ?? false
 
         if baseURLChanged {
             self.baseURL = baseURL
@@ -120,15 +135,19 @@ public final class QuranPlayerViewModel: ObservableObject {
             self.reciterId = reciterId
         }
 
+        if let timingSource {
+            self.timingSource = timingSource
+        }
+
         if chapterChanged {
             updateChapter(number: chapterNumber, name: chapterName)
         }
 
-        if !chapterChanged, reciterId != nil {
+        if !chapterChanged, (reciterId != nil || timingSourceChanged) {
             prefetchChapterTimingIfNeeded()
         }
 
-        return baseURLChanged || chapterChanged || reciterChanged || reciterId != nil
+        return baseURLChanged || chapterChanged || reciterChanged || reciterId != nil || timingSourceChanged
     }
 
     // MARK: - Lifecycle
@@ -169,9 +188,15 @@ public final class QuranPlayerViewModel: ObservableObject {
         prefetchChapterTimingIfNeeded()
     }
     
-    public func updateReciter(baseURL: URL, reciterName: String, reciterId: Int? = nil) {
+    public func updateReciter(
+        baseURL: URL,
+        reciterName: String,
+        reciterId: Int? = nil,
+        timingSource: TimingSource? = nil
+    ) {
         let reciterIdChanged = reciterId.map { $0 != self.reciterId } ?? false
-        guard baseURL != self.baseURL || reciterName != reciterNameInternal || reciterIdChanged else { return }
+        let timingSourceChanged = timingSource.map { $0 != self.timingSource } ?? false
+        guard baseURL != self.baseURL || reciterName != reciterNameInternal || reciterIdChanged || timingSourceChanged else { return }
 
         let previousState = playbackState
         let resumeVerse = currentVerseNumber
@@ -182,6 +207,9 @@ public final class QuranPlayerViewModel: ObservableObject {
         self.reciterNameInternal = reciterName
         if let reciterId {
             self.reciterId = reciterId
+        }
+        if let timingSource {
+            self.timingSource = timingSource
         }
 
         prefetchChapterTimingIfNeeded()
@@ -412,37 +440,27 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     private func preparePlayer(autoPlay: Bool) {
         cleanup()
-
-        guard let baseURL else {
-            playbackState = .failed(String(localized: "Audio playback is not configured."))
-            return
-        }
-
         playbackState = .loading
         shouldAutoStart = autoPlay
         prefetchChapterTimingIfNeeded()
 
-        let chapterPathComponent = String(format: "%03d.mp3", chapterNumber)
-        let audioURL = baseURL.appendingPathComponent(chapterPathComponent)
-        
-        // Log the URL for debugging
-        AppLogger.shared.info("QuranPlayer: Loading audio from URL: \(audioURL.absoluteString)", category: .network)
-        
-        let asset = AVURLAsset(url: audioURL)
-        let playerItem = AVPlayerItem(asset: asset)
-
-        let player = AVPlayer(playerItem: playerItem)
-        player.automaticallyWaitsToMinimizeStalling = true
-        self.player = player
-
-        observeStatus(for: playerItem)
-        observeTimeControl(for: player)
-        observePeriodicTime(for: player)
-        observeCompletion(for: playerItem)
+        prepareTask = Task { [weak self] in
+            guard let self else { return }
+            do {
+                let audioURL = try await self.resolveAudioURLForPlayback()
+                guard !Task.isCancelled else { return }
+                self.setupPlayer(with: audioURL)
+            } catch {
+                if error is CancellationError || Task.isCancelled { return }
+                self.playbackState = .failed(error.localizedDescription)
+            }
+        }
     }
 
     private func prefetchChapterTimingIfNeeded() {
         guard chapterNumber > 0, reciterId > 0 else { return }
+        guard case .both = timingSource else { return }
+
         let currentReciterId = reciterId
         let currentChapterNumber = chapterNumber
         let prefetchKey = "\(currentReciterId)-\(currentChapterNumber)"
@@ -454,7 +472,7 @@ public final class QuranPlayerViewModel: ObservableObject {
         prefetchTask?.cancel()
         lastPrefetchKey = prefetchKey
         prefetchTask = Task { [weak self] in
-            await AyahTimingService.shared.refreshChapterTimings(for: currentReciterId, surahId: currentChapterNumber)
+            _ = await AyahTimingService.shared.refreshChapterTimings(for: currentReciterId, surahId: currentChapterNumber)
             await MainActor.run {
                 guard let self else { return }
                 if self.lastPrefetchKey == prefetchKey {
@@ -462,6 +480,41 @@ public final class QuranPlayerViewModel: ObservableObject {
                 }
             }
         }
+    }
+
+    private func resolveAudioURLForPlayback() async throws -> URL {
+        switch timingSource {
+        case .itqan:
+            guard let audioURL = await AyahTimingService.shared.refreshChapterTimings(for: reciterId, surahId: chapterNumber)
+                ?? AyahTimingService.shared.getRemoteAudioURL(for: reciterId, surahId: chapterNumber) else {
+                throw TimingProviderError.missingData
+            }
+            return audioURL
+        case .both, .mp3quran:
+            guard let baseURL else {
+                throw TimingProviderError.invalidURL
+            }
+            let chapterPathComponent = String(format: "%03d.mp3", chapterNumber)
+            return baseURL.appendingPathComponent(chapterPathComponent)
+        case .none:
+            throw TimingProviderError.unsupportedTimingSource
+        }
+    }
+
+    private func setupPlayer(with audioURL: URL) {
+        AppLogger.shared.info("QuranPlayer: Loading audio from URL: \(audioURL.absoluteString)", category: .network)
+
+        let asset = AVURLAsset(url: audioURL)
+        let playerItem = AVPlayerItem(asset: asset)
+
+        let player = AVPlayer(playerItem: playerItem)
+        player.automaticallyWaitsToMinimizeStalling = true
+        self.player = player
+
+        observeStatus(for: playerItem)
+        observeTimeControl(for: player)
+        observePeriodicTime(for: player)
+        observeCompletion(for: playerItem)
     }
 
     private func observeStatus(for item: AVPlayerItem) {
@@ -587,6 +640,8 @@ public final class QuranPlayerViewModel: ObservableObject {
         player?.pause()
         player = nil
         isBuffering = false
+        prepareTask?.cancel()
+        prepareTask = nil
         prefetchTask?.cancel()
         prefetchTask = nil
         lastPrefetchKey = nil
