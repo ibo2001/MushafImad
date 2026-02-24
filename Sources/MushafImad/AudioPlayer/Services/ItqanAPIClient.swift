@@ -64,8 +64,9 @@ actor ItqanAPIClient {
             throw TimingProviderError.invalidResponse
         }
 
+        let decoded = try decode(responseType, from: data)
         responseCache[cacheKey] = CacheEntry(data: data, expiresAt: Date().addingTimeInterval(ttl))
-        return try decode(responseType, from: data)
+        return decoded
     }
 
     private func decode<T: Decodable>(_ responseType: T.Type, from data: Data) throws -> T {

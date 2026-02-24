@@ -121,6 +121,7 @@ public final class QuranPlayerViewModel: ObservableObject {
         let baseURLChanged = self.baseURL != baseURL
         let chapterChanged = self.chapterNumber != chapterNumber || chapterNameInternal != chapterName
         let reciterChanged = reciterNameInternal != reciterName
+        let reciterIdChanged = reciterId.map { $0 > 0 && $0 != self.reciterId } ?? false
         let timingSourceChanged = timingSource.map { $0 != self.timingSource } ?? false
 
         if baseURLChanged {
@@ -143,11 +144,11 @@ public final class QuranPlayerViewModel: ObservableObject {
             updateChapter(number: chapterNumber, name: chapterName)
         }
 
-        if !chapterChanged, (reciterId != nil || timingSourceChanged) {
+        if !chapterChanged, (reciterIdChanged || timingSourceChanged) {
             prefetchChapterTimingIfNeeded()
         }
 
-        return baseURLChanged || chapterChanged || reciterChanged || reciterId != nil || timingSourceChanged
+        return baseURLChanged || chapterChanged || reciterChanged || reciterIdChanged || timingSourceChanged
     }
 
     // MARK: - Lifecycle
