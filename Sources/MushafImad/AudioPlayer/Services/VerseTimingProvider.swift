@@ -6,9 +6,14 @@ protocol VerseTimingProvider: Sendable {
 }
 
 /// Canonical chapter timing payload used by all timing providers.
-struct ChapterTimingData: Equatable, Sendable {
-    let timings: [VerseTiming]
-    let audioURL: URL?
+public struct ChapterTimingData: Equatable, Sendable {
+    public let timings: [VerseTiming]
+    public let audioURL: URL?
+
+    public init(timings: [VerseTiming], audioURL: URL?) {
+        self.timings = timings
+        self.audioURL = audioURL
+    }
 }
 
 public enum TimingProviderError: Error, Equatable {

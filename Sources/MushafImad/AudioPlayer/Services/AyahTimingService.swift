@@ -86,9 +86,9 @@ public final class AyahTimingService {
             loadTiming(for: reciterId)
             return nil
         case .itqan:
-            return await refreshRemoteChapterTimings(reciterId: reciterId, surahId: surahId)
+            return await refreshRemoteChapterTimings(for: reciterId, surahId: surahId)
         case .both:
-            _ = await refreshRemoteChapterTimings(reciterId: reciterId, surahId: surahId)
+            _ = await refreshRemoteChapterTimings(for: reciterId, surahId: surahId)
             return nil
         }
     }
