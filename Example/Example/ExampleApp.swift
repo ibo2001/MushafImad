@@ -19,6 +19,12 @@ struct ExampleApp: App {
         } catch {
             AppLogger.shared.error("Failed to initialize Realm: \(error.localizedDescription)", category: .realm)
         }
+        // prepare the audio session early so background playback works
+        do {
+            try AudioSessionManager.shared.configureAudioSession()
+        } catch {
+            AppLogger.shared.error("Failed to configure audio session: \(error)", category: .audio)
+        }
     }
     
     var body: some Scene {

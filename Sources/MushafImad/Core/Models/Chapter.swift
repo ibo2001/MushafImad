@@ -81,6 +81,30 @@ extension Chapter {
         fatiha.arabicTitle = "الفاتحة"
         fatiha.englishTitle = "Al-Fatihah"
         fatiha.verses = List<Verse>()
+        fatiha.isMeccan = true
         return fatiha
+    }
+    
+    /// Mock Medinan chapter for testing purposes
+    @MainActor
+    public static var mockMedinan: Chapter {
+        let baqarah = Chapter()
+        
+        baqarah.number = 2
+        baqarah.arabicTitle = "البقرة"
+        baqarah.englishTitle = "Al-Baqarah"
+        baqarah.verses = List<Verse>()
+
+        let medinanVerse = Verse()
+        medinanVerse.chapter = baqarah
+        medinanVerse.verseID = 10
+        medinanVerse.number = 1
+        
+        let medinanPage = Page()
+        medinanPage.number = 99
+        medinanVerse.page1441 = medinanPage
+        baqarah.verses.append(medinanVerse)
+
+        return baqarah
     }
 }

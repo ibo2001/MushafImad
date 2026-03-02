@@ -7,14 +7,59 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+		3F3825292F4E2E5D0096FE49 /* WidgetKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F3825282F4E2E5D0096FE49 /* WidgetKit.framework */; };
+		3F38252B2F4E2E5D0096FE49 /* SwiftUI.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = 3F38252A2F4E2E5D0096FE49 /* SwiftUI.framework */; };
+		3F38253C2F4E2E5E0096FE49 /* AyahOfTheDayWidgetExtension.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 3F3825262F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension.appex */; platformFilters = (ios, ); settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		3F38254D2F4E31E10096FE49 /* MushafImad in Frameworks */ = {isa = PBXBuildFile; productRef = 3F38254C2F4E31E10096FE49 /* MushafImad */; };
 		F6ECB7962EC5414000C71679 /* MushafImad in Frameworks */ = {isa = PBXBuildFile; productRef = F6ECB7952EC5414000C71679 /* MushafImad */; };
 /* End PBXBuildFile section */
 
+/* Begin PBXContainerItemProxy section */
+		3F38253A2F4E2E5E0096FE49 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = F6ECB77E2EC540DD00C71679 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 3F3825252F4E2E5D0096FE49;
+			remoteInfo = AyahOfTheDayWidgetExtension;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		3F38253D2F4E2E5E0096FE49 /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				3F38253C2F4E2E5E0096FE49 /* AyahOfTheDayWidgetExtension.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
 /* Begin PBXFileReference section */
+		3F3825262F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = AyahOfTheDayWidgetExtension.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		3F3825282F4E2E5D0096FE49 /* WidgetKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = WidgetKit.framework; path = System/Library/Frameworks/WidgetKit.framework; sourceTree = SDKROOT; };
+		3F38252A2F4E2E5D0096FE49 /* SwiftUI.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = SwiftUI.framework; path = System/Library/Frameworks/SwiftUI.framework; sourceTree = SDKROOT; };
 		F6ECB7862EC540DD00C71679 /* Example.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = Example.app; sourceTree = BUILT_PRODUCTS_DIR; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
+		3F3825412F4E2E5E0096FE49 /* Exceptions for "AyahOfTheDayWidget" folder in "AyahOfTheDayWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				Info.plist,
+			);
+			target = 3F3825252F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension */;
+		};
+		3F38254B2F4E2F7D0096FE49 /* Exceptions for "Example" folder in "AyahOfTheDayWidgetExtension" target */ = {
+			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
+			membershipExceptions = (
+				"Kitab-Bold.ttf",
+			);
+			target = 3F3825252F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension */;
+		};
 		F603F9D82EC5E31D00DB1C13 /* Exceptions for "Example" folder in "Example" target */ = {
 			isa = PBXFileSystemSynchronizedBuildFileExceptionSet;
 			membershipExceptions = (
@@ -25,10 +70,19 @@
 /* End PBXFileSystemSynchronizedBuildFileExceptionSet section */
 
 /* Begin PBXFileSystemSynchronizedRootGroup section */
+		3F38252C2F4E2E5D0096FE49 /* AyahOfTheDayWidget */ = {
+			isa = PBXFileSystemSynchronizedRootGroup;
+			exceptions = (
+				3F3825412F4E2E5E0096FE49 /* Exceptions for "AyahOfTheDayWidget" folder in "AyahOfTheDayWidgetExtension" target */,
+			);
+			path = AyahOfTheDayWidget;
+			sourceTree = "<group>";
+		};
 		F6ECB7882EC540DD00C71679 /* Example */ = {
 			isa = PBXFileSystemSynchronizedRootGroup;
 			exceptions = (
 				F603F9D82EC5E31D00DB1C13 /* Exceptions for "Example" folder in "Example" target */,
+				3F38254B2F4E2F7D0096FE49 /* Exceptions for "Example" folder in "AyahOfTheDayWidgetExtension" target */,
 			);
 			path = Example;
 			sourceTree = "<group>";
@@ -36,6 +90,16 @@
 /* End PBXFileSystemSynchronizedRootGroup section */
 
 /* Begin PBXFrameworksBuildPhase section */
+		3F3825232F4E2E5D0096FE49 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				3F38254D2F4E31E10096FE49 /* MushafImad in Frameworks */,
+				3F38252B2F4E2E5D0096FE49 /* SwiftUI.framework in Frameworks */,
+				3F3825292F4E2E5D0096FE49 /* WidgetKit.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6ECB7832EC540DD00C71679 /* Frameworks */ = {
 			isa = PBXFrameworksBuildPhase;
 			buildActionMask = 2147483647;
@@ -47,10 +111,21 @@
 /* End PBXFrameworksBuildPhase section */
 
 /* Begin PBXGroup section */
+		3F3825272F4E2E5D0096FE49 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				3F3825282F4E2E5D0096FE49 /* WidgetKit.framework */,
+				3F38252A2F4E2E5D0096FE49 /* SwiftUI.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
 		F6ECB77D2EC540DD00C71679 = {
 			isa = PBXGroup;
 			children = (
 				F6ECB7882EC540DD00C71679 /* Example */,
+				3F38252C2F4E2E5D0096FE49 /* AyahOfTheDayWidget */,
+				3F3825272F4E2E5D0096FE49 /* Frameworks */,
 				F6ECB7872EC540DD00C71679 /* Products */,
 			);
 			sourceTree = "<group>";
@@ -59,6 +134,7 @@
 			isa = PBXGroup;
 			children = (
 				F6ECB7862EC540DD00C71679 /* Example.app */,
+				3F3825262F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension.appex */,
 			);
 			name = Products;
 			sourceTree = "<group>";
@@ -66,6 +142,29 @@
 /* End PBXGroup section */
 
 /* Begin PBXNativeTarget section */
+		3F3825252F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 3F3825402F4E2E5E0096FE49 /* Build configuration list for PBXNativeTarget "AyahOfTheDayWidgetExtension" */;
+			buildPhases = (
+				3F3825222F4E2E5D0096FE49 /* Sources */,
+				3F3825232F4E2E5D0096FE49 /* Frameworks */,
+				3F3825242F4E2E5D0096FE49 /* Resources */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			fileSystemSynchronizedGroups = (
+				3F38252C2F4E2E5D0096FE49 /* AyahOfTheDayWidget */,
+			);
+			name = AyahOfTheDayWidgetExtension;
+			packageProductDependencies = (
+				3F38254C2F4E31E10096FE49 /* MushafImad */,
+			);
+			productName = AyahOfTheDayWidgetExtension;
+			productReference = 3F3825262F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
 		F6ECB7852EC540DD00C71679 /* Example */ = {
 			isa = PBXNativeTarget;
 			buildConfigurationList = F6ECB7912EC540DE00C71679 /* Build configuration list for PBXNativeTarget "Example" */;
@@ -73,10 +172,12 @@
 				F6ECB7822EC540DD00C71679 /* Sources */,
 				F6ECB7832EC540DD00C71679 /* Frameworks */,
 				F6ECB7842EC540DD00C71679 /* Resources */,
+				3F38253D2F4E2E5E0096FE49 /* Embed Foundation Extensions */,
 			);
 			buildRules = (
 			);
 			dependencies = (
+				3F38253B2F4E2E5E0096FE49 /* PBXTargetDependency */,
 			);
 			fileSystemSynchronizedGroups = (
 				F6ECB7882EC540DD00C71679 /* Example */,
@@ -96,9 +197,12 @@
 			isa = PBXProject;
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
-				LastSwiftUpdateCheck = 2600;
+				LastSwiftUpdateCheck = 2630;
 				LastUpgradeCheck = 2600;
 				TargetAttributes = {
+					3F3825252F4E2E5D0096FE49 = {
+						CreatedOnToolsVersion = 26.3;
+					};
 					F6ECB7852EC540DD00C71679 = {
 						CreatedOnToolsVersion = 26.0.1;
 					};
@@ -122,11 +226,19 @@
 			projectRoot = "";
 			targets = (
 				F6ECB7852EC540DD00C71679 /* Example */,
+				3F3825252F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension */,
 			);
 		};
 /* End PBXProject section */
 
 /* Begin PBXResourcesBuildPhase section */
+		3F3825242F4E2E5D0096FE49 /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6ECB7842EC540DD00C71679 /* Resources */ = {
 			isa = PBXResourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -137,6 +249,13 @@
 /* End PBXResourcesBuildPhase section */
 
 /* Begin PBXSourcesBuildPhase section */
+		3F3825222F4E2E5D0096FE49 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
 		F6ECB7822EC540DD00C71679 /* Sources */ = {
 			isa = PBXSourcesBuildPhase;
 			buildActionMask = 2147483647;
@@ -146,7 +265,80 @@
 		};
 /* End PBXSourcesBuildPhase section */
 
+/* Begin PBXTargetDependency section */
+		3F38253B2F4E2E5E0096FE49 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 3F3825252F4E2E5D0096FE49 /* AyahOfTheDayWidgetExtension */;
+			targetProxy = 3F38253A2F4E2E5E0096FE49 /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
 /* Begin XCBuildConfiguration section */
+		3F38253E2F4E2E5E0096FE49 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VL98EPR6T6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AyahOfTheDayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AyahOfTheDayWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qraiqe.mushaf.imad.Example.AyahOfTheDayWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+			};
+			name = Debug;
+		};
+		3F38253F2F4E2E5E0096FE49 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_GLOBAL_ACCENT_COLOR_NAME = AccentColor;
+				ASSETCATALOG_COMPILER_WIDGET_BACKGROUND_COLOR_NAME = WidgetBackground;
+				CODE_SIGN_STYLE = Automatic;
+				CURRENT_PROJECT_VERSION = 1;
+				DEVELOPMENT_TEAM = VL98EPR6T6;
+				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = AyahOfTheDayWidget/Info.plist;
+				INFOPLIST_KEY_CFBundleDisplayName = AyahOfTheDayWidget;
+				INFOPLIST_KEY_NSHumanReadableCopyright = "";
+				IPHONEOS_DEPLOYMENT_TARGET = 26.2;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/Frameworks",
+					"@executable_path/../../Frameworks",
+				);
+				MARKETING_VERSION = 1.0;
+				PRODUCT_BUNDLE_IDENTIFIER = com.qraiqe.mushaf.imad.Example.AyahOfTheDayWidget;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = iphoneos;
+				SKIP_INSTALL = YES;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
+				SWIFT_APPROACHABLE_CONCURRENCY = YES;
+				SWIFT_EMIT_LOC_STRINGS = YES;
+				SWIFT_UPCOMING_FEATURE_MEMBER_IMPORT_VISIBILITY = YES;
+				SWIFT_VERSION = 5.0;
+				TARGETED_DEVICE_FAMILY = "1,2";
+				VALIDATE_PRODUCT = YES;
+			};
+			name = Release;
+		};
 		F6ECB78F2EC540DE00C71679 /* Debug */ = {
 			isa = XCBuildConfiguration;
 			buildSettings = {
@@ -273,9 +465,20 @@
 				DEVELOPMENT_TEAM = VL98EPR6T6;
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Example/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -317,9 +520,20 @@
 				DEVELOPMENT_TEAM = "";
 				ENABLE_APP_SANDBOX = YES;
 				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_INCOMING_NETWORK_CONNECTIONS = NO;
+				ENABLE_OUTGOING_NETWORK_CONNECTIONS = YES;
 				ENABLE_PREVIEWS = YES;
+				ENABLE_RESOURCE_ACCESS_AUDIO_INPUT = NO;
+				ENABLE_RESOURCE_ACCESS_BLUETOOTH = NO;
+				ENABLE_RESOURCE_ACCESS_CALENDARS = NO;
+				ENABLE_RESOURCE_ACCESS_CAMERA = NO;
+				ENABLE_RESOURCE_ACCESS_CONTACTS = NO;
+				ENABLE_RESOURCE_ACCESS_LOCATION = NO;
+				ENABLE_RESOURCE_ACCESS_PRINTING = NO;
+				ENABLE_RESOURCE_ACCESS_USB = NO;
 				ENABLE_USER_SELECTED_FILES = readonly;
 				GENERATE_INFOPLIST_FILE = YES;
+				INFOPLIST_FILE = Example/Info.plist;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphoneos*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSceneManifest_Generation[sdk=iphonesimulator*]" = YES;
 				"INFOPLIST_KEY_UIApplicationSupportsIndirectInputEvents[sdk=iphoneos*]" = YES;
@@ -354,6 +568,15 @@
 /* End XCBuildConfiguration section */
 
 /* Begin XCConfigurationList section */
+		3F3825402F4E2E5E0096FE49 /* Build configuration list for PBXNativeTarget "AyahOfTheDayWidgetExtension" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				3F38253E2F4E2E5E0096FE49 /* Debug */,
+				3F38253F2F4E2E5E0096FE49 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Release;
+		};
 		F6ECB7812EC540DD00C71679 /* Build configuration list for PBXProject "Example" */ = {
 			isa = XCConfigurationList;
 			buildConfigurations = (
@@ -382,6 +605,11 @@
 /* End XCLocalSwiftPackageReference section */
 
 /* Begin XCSwiftPackageProductDependency section */
+		3F38254C2F4E31E10096FE49 /* MushafImad */ = {
+			isa = XCSwiftPackageProductDependency;
+			package = F6ECB7942EC5414000C71679 /* XCLocalSwiftPackageReference "../../MushafImad" */;
+			productName = MushafImad;
+		};
 		F6ECB7952EC5414000C71679 /* MushafImad */ = {
 			isa = XCSwiftPackageProductDependency;
 			productName = MushafImad;

@@ -25,3 +25,26 @@ public final class Part: Object {
         return ["number"]
     }
 }
+
+extension Part {
+    /// Create a Part and attach the chapter and verse
+    @MainActor
+    public static func makeMock(chapter: Chapter = .mock,
+                                verse: Verse = .mock,
+                                page: Page = .mock) -> Part {
+        // Ensure verse is associated with the chapter and has a page
+        verse.chapter = chapter
+        verse.page1441 = page
+        chapter.verses.append(verse)
+        
+        // Create a Part and attach the chapter and verse
+        let part = Part()
+        part.identifier = 1
+        part.number = 1
+        part.arabicTitle = "الجزء الأول"
+        part.englishTitle = "Part One"
+        part.chapters.append(chapter)
+        part.verses.append(verse)
+        return part
+    }
+}

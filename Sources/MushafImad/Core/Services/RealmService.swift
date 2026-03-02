@@ -8,15 +8,68 @@
 import Foundation
 import RealmSwift
 
+/// Protocol abstraction over RealmService to allow dependency injection and easier testing
+@MainActor
+public protocol RealmServiceProtocol: Sendable {
+    func fetchAllChaptersAsync() async throws -> [Chapter]
+    func fetchAllPartsAsync() async throws -> [Part]
+    func fetchAllQuartersAsync() async throws -> [Quarter]
+}
+
 /// Facade around the bundled Realm database that powers Quran metadata.
 @MainActor
-public final class RealmService {
+public final class RealmService: RealmServiceProtocol {
     public static let shared = RealmService()
     
     private var realm: Realm?
     private var configuration: Realm.Configuration?
     
     private init() {}
+    
+    // MARK: - Initialization (Widget)
+    
+    /// Initializes Realm for the widget by copying the bundled database to a writable location first.
+    /// This is necessary because the bundled database requires a schema upgrade (format 23 -> 24),
+    /// which cannot be performed in read-only mode from the bundle.
+    public func initializeForWidget() throws {
+        if realm != nil {
+            return
+        }
+        
+        guard let bundledRealmURL = Bundle.mushafResources.url(forResource: "quran", withExtension: "realm") else {
+            throw NSError(domain: "RealmService", code: 1,
+                         userInfo: [NSLocalizedDescriptionKey: "Could not find quran.realm in bundle"])
+        }
+        
+        let fileManager = FileManager.default
+        // Widgets usually can't write to Application Support safely without App Groups,
+        // but we can write to the extension's local Cache or Documents directory.
+        guard let cachesURL = fileManager.urls(for: .cachesDirectory, in: .userDomainMask).first else {
+            throw NSError(domain: "RealmService", code: 2,
+                         userInfo: [NSLocalizedDescriptionKey: "Could not access Caches directory for Widget"])
+        }
+        
+        let writableRealmURL = cachesURL.appendingPathComponent("quran_widget.realm")
+        
+        // Copy if it doesn't exist
+        if !fileManager.fileExists(atPath: writableRealmURL.path) {
+            try fileManager.copyItem(at: bundledRealmURL, to: writableRealmURL)
+        }
+        
+        // Configure Realm with automatic migration (aligned with main app)
+        let config = Realm.Configuration(
+            fileURL: writableRealmURL,
+            schemaVersion: 24,
+            migrationBlock: { migration, oldSchemaVersion in
+                if oldSchemaVersion < 24 {
+                    // Perform any necessary migration
+                }
+            }
+        )
+        
+        configuration = config
+        realm = try Realm(configuration: config)
+    }
     
     // MARK: - Initialization
     
@@ -28,7 +81,7 @@ public final class RealmService {
         
         // Get the path to the bundled Realm file
         guard let bundledRealmURL = Bundle.mushafResources.url(forResource: "quran", withExtension: "realm") else {
-            throw NSError(domain: "RealmService", code: 1, 
+            throw NSError(domain: "RealmService", code: 1,
                          userInfo: [NSLocalizedDescriptionKey: "Could not find quran.realm in bundle"])
         }
         
@@ -220,6 +273,20 @@ public final class RealmService {
     public func getVerse(chapterNumber: Int, verseNumber: Int) -> Verse? {
         let humanReadableID = "\(chapterNumber)_\(verseNumber)"
         return realm?.objects(Verse.self).filter("humanReadableID == %@", humanReadableID).first?.freeze()
+    }
+    
+    public func getRandomAyah(for date: Date) -> Verse? {
+        guard let realm = realm else { return nil }
+        
+        let allVerses = realm.objects(Verse.self)
+        let count = allVerses.count
+        guard count > 0 else { return nil }
+        
+        let daysSinceEpoch = Int(date.timeIntervalSince1970 / 86400)
+        let index = abs(daysSinceEpoch) % count
+        
+        // Results are unordered. Using an offset fetch:
+        return allVerses[index].freeze()
     }
     
     // MARK: - Part (Juz) Operations

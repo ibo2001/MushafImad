@@ -27,3 +27,13 @@ public final class Page: Object {
         return ["number"]
     }
 }
+
+extension Page {
+    @MainActor
+    public static var mock: Page {
+        let page = Page()
+        page.identifier = 1
+        page.number = 42
+        return page
+    }
+}

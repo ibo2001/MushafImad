@@ -50,6 +50,9 @@ public final class ReciterService: ObservableObject {
         /// The base URL string where the reciter's audio files are hosted.
         public let folderURL: String
         
+        /// Source of verse timings for this reciter.
+        public let timingSource: TimingSource
+
         /// Creates a new reciter info instance.
         /// - Parameters:
         ///   - id: Unique identifier for the reciter.
@@ -62,13 +65,15 @@ public final class ReciterService: ObservableObject {
             nameArabic: String,
             nameEnglish: String,
             rewaya: String,
-            folderURL: String
+            folderURL: String,
+            timingSource: TimingSource
         ) {
             self.id = id
             self.nameArabic = nameArabic
             self.nameEnglish = nameEnglish
             self.rewaya = rewaya
             self.folderURL = folderURL
+            self.timingSource = timingSource
         }
         
         /// Localized name depending on the current locale.
@@ -167,7 +172,8 @@ public final class ReciterService: ObservableObject {
                     nameArabic: reciterTiming.name,
                     nameEnglish: reciterTiming.name_en,
                     rewaya: reciterTiming.rewaya,
-                    folderURL: reciterTiming.folder_url
+                    folderURL: reciterTiming.folder_url,
+                    timingSource: ReciterDataProvider.timingSource(for: reciterTiming.id)
                 )
                 reciters.append(info)
                 loadedFromJSON = true
@@ -183,9 +189,25 @@ public final class ReciterService: ObservableObject {
                     nameArabic: reciterData.nameArabic,
                     nameEnglish: reciterData.nameEnglish,
                     rewaya: reciterData.rewaya,
-                    folderURL: reciterData.folderURL
+                    folderURL: reciterData.folderURL,
+                    timingSource: reciterData.timingSource
                 )
                 reciters.append(info)
+            }
+        } else {
+            // Ensure Itqan-only reciters are visible even when not present in local manifest.
+            for reciterData in ReciterDataProvider.reciters where reciterData.id >= 1000 {
+                if reciters.contains(where: { $0.id == reciterData.id }) { continue }
+                reciters.append(
+                    ReciterInfo(
+                        id: reciterData.id,
+                        nameArabic: reciterData.nameArabic,
+                        nameEnglish: reciterData.nameEnglish,
+                        rewaya: reciterData.rewaya,
+                        folderURL: reciterData.folderURL,
+                        timingSource: reciterData.timingSource
+                    )
+                )
             }
         }
         

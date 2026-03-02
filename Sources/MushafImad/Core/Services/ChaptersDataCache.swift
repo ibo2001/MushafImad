@@ -11,7 +11,10 @@ import RealmSwift
 /// Singleton cache for chapters data to avoid reloading on every view appearance
 @MainActor
 public final class ChaptersDataCache {
-    public static let shared = ChaptersDataCache()
+    public static let shared = ChaptersDataCache(realmService: RealmService.shared)
+    
+    // Injected Realm service (defaults to the singleton). Mutable so tests can override.
+    private var realmService: RealmServiceProtocol
     
     // Cached data
     public private(set) var allChapters: [Chapter] = []
@@ -24,7 +27,15 @@ public final class ChaptersDataCache {
     public private(set) var isHizbCached = false
     public private(set) var isTypeCached = false
     
-    private init() {}
+    // Default private initializer uses the shared RealmService
+    private init(realmService: RealmServiceProtocol) {
+        self.realmService = realmService
+    }
+
+    /// Allow tests (using @testable) to override the RealmService on the shared instance
+    package func setRealmService(_ service: RealmServiceProtocol) {
+        self.realmService = service
+    }
     
     /// Load and cache chapters data only (with progressive loading callback)
     /// Grouped data is loaded on-demand via separate methods
@@ -33,9 +44,6 @@ public final class ChaptersDataCache {
         if isCached && !allChapters.isEmpty {
             return
         }
-        
-        
-        let realmService = RealmService.shared
         
         // Load chapters off the main actor to avoid blocking UI
         let chapters = try await realmService.fetchAllChaptersAsync()
@@ -53,7 +61,6 @@ public final class ChaptersDataCache {
             return
         }
         
-        let realmService = RealmService.shared
         let parts = try await realmService.fetchAllPartsAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
@@ -90,7 +97,6 @@ public final class ChaptersDataCache {
             return
         }
         
-        let realmService = RealmService.shared
         let quarters = try await realmService.fetchAllQuartersAsync()
         
         // Create a lookup dictionary for chapters by number for efficient access
@@ -209,4 +215,3 @@ public final class ChaptersDataCache {
         isTypeCached = false
     }
 }
-

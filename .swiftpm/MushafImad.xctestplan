@@ -1,0 +1,24 @@
+{
+  "configurations" : [
+    {
+      "id" : "DAF643FB-9758-4D39-A513-3BBE1F21C865",
+      "name" : "Test Scheme Action",
+      "options" : {
+
+      }
+    }
+  ],
+  "defaultOptions" : {
+    "performanceAntipatternCheckerEnabled" : true
+  },
+  "testTargets" : [
+    {
+      "target" : {
+        "containerPath" : "container:",
+        "identifier" : "MushafImadTests",
+        "name" : "MushafImadTests"
+      }
+    }
+  ],
+  "version" : 1
+}

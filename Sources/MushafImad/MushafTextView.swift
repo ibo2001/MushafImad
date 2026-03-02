@@ -189,19 +189,18 @@ private struct VerseTextRow: View {
     }
 
     var body: some View {
-        VStack(alignment: .trailing, spacing: 4) {
+        HStack(alignment: .bottom, spacing: 4) {
             Text(verseText)
                 .font(.uthmanicHafs(size: fontSize))
-                .multilineTextAlignment(.trailing)
+                .multilineTextAlignment(.leading)
                 .lineSpacing(CGFloat(fontSize) * 0.4)
-                .frame(maxWidth: .infinity, alignment: .trailing)
 
             VerseFasel(
                 number: verse.number,
-                scale: CGFloat(fontSize) / Self.verseFaselBaseFontSize
+                scale: CGFloat(fontSize * 0.8) / Self.verseFaselBaseFontSize
             )
-            .frame(maxWidth: .infinity, alignment: .trailing)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .padding(8)
         .background(
             RoundedRectangle(cornerRadius: 8)

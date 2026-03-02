@@ -35,3 +35,25 @@ public final class Quarter: Object {
         }
     }
 }
+
+extension Quarter {
+    /// Creates a mock Quarter with associated Chapter, Verse, and Page for testing purposes.
+    @MainActor
+    public static func makeMock(chapter: Chapter = .mock,
+                                verse: Verse = .mock,
+                                page: Page = .mock) -> Quarter {
+        verse.chapter = chapter
+        verse.page1441 = page
+        chapter.verses.append(verse)
+        
+        // Create a Quarter and attach the verse
+        let quarter = Quarter()
+        quarter.identifier = 11
+        quarter.hizbNumber = 2
+        quarter.hizbFraction = 1
+        quarter.arabicTitle = "الربع التجريبي"
+        quarter.englishTitle = "Test Quarter"
+        quarter.verses.append(verse)
+        return quarter
+    }
+}

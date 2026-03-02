@@ -90,31 +90,33 @@ private struct SuraList: View {
     @State private var navbarHidden:Bool = true
     
     var body: some View {
-        VStack {
-            Text("Sura List")
-                .font(.title)
-                .padding()
-            List(suras){sura in
-                NavigationLink {
-                    MushafView(initialPage: sura.startPage, onPageTap: {
-                        withAnimation {
-                            navbarHidden.toggle()
+        NavigationStack {
+            VStack {
+                Text("Sura List")
+                    .font(.title)
+                    .padding()
+                List(suras){sura in
+                    NavigationLink {
+                        MushafView(initialPage: sura.startPage, onPageTap: {
+                            withAnimation {
+                                navbarHidden.toggle()
+                            }
+                        })
+                    } label: {
+                        HStack {
+                            Text("\(sura.number) - \(sura.displayTitle)")
+                            Spacer()
+                            Text("page (\(sura.startPage))")
+                                .font(.footnote)
+                                .foregroundStyle(.secondary)
                         }
-                    })
-                } label: {
-                    HStack {
-                        Text("\(sura.number) - \(sura.displayTitle)")
-                        Spacer()
-                        Text("page (\(sura.startPage))")
-                            .font(.footnote)
-                            .foregroundStyle(.secondary)
                     }
                 }
             }
-        }
-        .task {
-            if let result = RealmService.shared.getAllChapters() {
-                suras = Array(result)
+            .task {
+                if let result = RealmService.shared.getAllChapters() {
+                    suras = Array(result)
+                }
             }
         }
     }
@@ -261,7 +263,6 @@ private struct VerseByVerseDemo: View {
         MushafView(
             initialPage: highlightedVerse?.page1441?.number ?? 1,
             highlightedVerse: $highlightedVerse,
-            registerPlayerWithCoordinator: false,
             onVerseLongPress: handleLongPress(_:))
         .navigationTitle("Verse by Verse")
         .sheet(isPresented: $showPlayerSheet) {
