@@ -32,7 +32,7 @@ public class TiltScrollManager: ObservableObject {
         }
     }
     
-    @AppStorage("tilt_sensitivity") public var sensitivity: Double = 5.0
+    @AppStorage("tilt_sensitivity") public var sensitivity: Double = 2.5
     
     private weak var scrollView: UIScrollView?
     private var scrollAxis: ScrollAxis = .vertical
@@ -204,7 +204,7 @@ public class TiltScrollManager: ObservableObject {
             ? (delta - deadZone * (delta > 0 ? 1 : -1))
             : 0
 
-        let scale: Double = 42.0
+        let scale: Double = 24.0
         var targetVelocity = CGFloat(effectiveTilt * sensitivity * scale)
         targetVelocity *= speedMultiplier
         targetVelocity = max(-maxVelocity, min(targetVelocity, maxVelocity))
