@@ -85,7 +85,7 @@ public struct MushafView: View {
 #endif
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
-    @AppStorage("display_mode") private var displayMode: DisplayMode = .image
+    @AppStorage("display_mode") private var displayMode: DisplayMode = .text
     @AppStorage("text_font_size") private var textFontSize: Double = 24.0
     @State private var textModeInitialChapter: Int = 1
 
@@ -306,6 +306,15 @@ public struct MushafView: View {
                     },
                     fontSize: textFontSize
                 )
+#if canImport(UIKit)
+                .background(
+                    ScrollViewIntrospector(axisHint: .vertical) { scrollView in
+                        tiltManager.setTiltProfile(.textContinuous)
+                        tiltManager.setScrollAxis(.vertical)
+                        tiltManager.setScrollView(scrollView)
+                    }
+                )
+#endif
             } else if scrollingMode == .horizontal {
                 horizontalPageView(currentHighlight: currentHighlight)
             } else {
@@ -329,6 +338,7 @@ public struct MushafView: View {
 #if canImport(UIKit)
         .background(
             ScrollViewIntrospector(axisHint: .horizontal, prefersPaging: true) { scrollView in
+                tiltManager.setTiltProfile(.defaultPaged)
                 tiltManager.setScrollAxis(.horizontal)
                 tiltManager.setScrollView(scrollView)
             }
@@ -360,6 +370,7 @@ public struct MushafView: View {
 #if canImport(UIKit)
                 .background(
                     ScrollViewIntrospector(axisHint: .vertical) { scrollView in
+                        tiltManager.setTiltProfile(.defaultPaged)
                         tiltManager.setScrollAxis(.vertical)
                         tiltManager.setScrollView(scrollView)
                     }

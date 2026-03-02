@@ -17,6 +17,11 @@ public class TiltScrollManager: ObservableObject {
         case horizontal
     }
 
+    public enum TiltProfile {
+        case defaultPaged
+        case textContinuous
+    }
+
     private let motionManager = CMMotionManager()
     private var displayLink: CADisplayLink?
     private var settingsCancellable: AnyCancellable?
@@ -31,6 +36,7 @@ public class TiltScrollManager: ObservableObject {
     
     private weak var scrollView: UIScrollView?
     private var scrollAxis: ScrollAxis = .vertical
+    private var tiltProfile: TiltProfile = .defaultPaged
     
     private var scrollVelocity: CGFloat = 0
     private let speedMultiplier: CGFloat = 0.35
@@ -52,6 +58,10 @@ public class TiltScrollManager: ObservableObject {
 
     public func setScrollAxis(_ axis: ScrollAxis) {
         scrollAxis = axis
+    }
+
+    public func setTiltProfile(_ profile: TiltProfile) {
+        tiltProfile = profile
     }
     
     private var isMonitoring = false
@@ -120,6 +130,11 @@ public class TiltScrollManager: ObservableObject {
     }
     
     private func processMotion(_ motion: CMDeviceMotion) {
+        if tiltProfile == .textContinuous, scrollAxis == .vertical {
+            processTextContinuousMotion(motion)
+            return
+        }
+
         let pitch = motion.attitude.pitch
         let roll = motion.attitude.roll
         let tiltAngle: Double
@@ -157,6 +172,26 @@ public class TiltScrollManager: ObservableObject {
         scrollVelocity = scrollVelocity * 0.9 + targetVelocity * 0.1
         
         // Dead stop if very small
+        if abs(scrollVelocity) < 0.1 {
+            scrollVelocity = 0
+        }
+    }
+
+    /// Text profile: forward tilt (top down / negative pitch) scrolls down,
+    /// backward tilt (top up / positive pitch) scrolls up.
+    private func processTextContinuousMotion(_ motion: CMDeviceMotion) {
+        let pitch = motion.attitude.pitch
+        let deadZone = 4.5 * .pi / 180.0
+        let effectiveTilt = abs(pitch) > deadZone
+            ? (pitch - deadZone * (pitch > 0 ? 1 : -1))
+            : 0
+
+        let scale: Double = 42.0
+        var targetVelocity = CGFloat(-effectiveTilt * sensitivity * scale)
+        targetVelocity *= speedMultiplier
+        targetVelocity = max(-maxVelocity, min(targetVelocity, maxVelocity))
+
+        scrollVelocity = scrollVelocity * 0.88 + targetVelocity * 0.12
         if abs(scrollVelocity) < 0.1 {
             scrollVelocity = 0
         }
