@@ -164,6 +164,12 @@ public class TiltScrollManager: ObservableObject {
             targetVelocity = -CGFloat(delta * sensitivity * scale)
         }
 
+        // For horizontal axis, invert sign so:
+        // tilt right -> scroll right, tilt left -> scroll left.
+        if scrollAxis == .horizontal {
+            targetVelocity = -targetVelocity
+        }
+
         targetVelocity *= speedMultiplier
         targetVelocity = max(-maxVelocity, min(targetVelocity, maxVelocity))
         
@@ -177,13 +183,17 @@ public class TiltScrollManager: ObservableObject {
         }
     }
 
-    /// Text profile: forward tilt (top down / negative pitch) scrolls down,
-    /// backward tilt (top up / positive pitch) scrolls up.
+    /// Text profile:
+    /// - forward tilt (top down) -> content moves up (like swipe up)
+    /// - backward tilt (top up) -> content moves down (like swipe down)
+    /// Neutral is near upright reading posture, with a dead-zone to avoid jitter.
     private func processTextContinuousMotion(_ motion: CMDeviceMotion) {
         let pitch = motion.attitude.pitch
-        let deadZone = 4.5 * .pi / 180.0
-        let effectiveTilt = abs(pitch) > deadZone
-            ? (pitch - deadZone * (pitch > 0 ? 1 : -1))
+        let neutralPitch = -80.0 * .pi / 180.0
+        let deadZone = 6.0 * .pi / 180.0
+        let delta = pitch - neutralPitch
+        let effectiveTilt = abs(delta) > deadZone
+            ? (delta - deadZone * (delta > 0 ? 1 : -1))
             : 0
 
         let scale: Double = 42.0
