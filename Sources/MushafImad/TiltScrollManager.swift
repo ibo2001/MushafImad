@@ -37,6 +37,7 @@ public class TiltScrollManager: ObservableObject {
     private weak var scrollView: UIScrollView?
     private var scrollAxis: ScrollAxis = .vertical
     private var tiltProfile: TiltProfile = .defaultPaged
+    private var textNeutralPitch: Double?
     
     private var scrollVelocity: CGFloat = 0
     private let speedMultiplier: CGFloat = 0.35
@@ -61,6 +62,9 @@ public class TiltScrollManager: ObservableObject {
     }
 
     public func setTiltProfile(_ profile: TiltProfile) {
+        if tiltProfile != profile {
+            textNeutralPitch = nil
+        }
         tiltProfile = profile
     }
     
@@ -108,6 +112,7 @@ public class TiltScrollManager: ObservableObject {
     public func deactivate() {
         stopMonitoring()
         isMonitoring = false
+        textNeutralPitch = nil
     }
     
     private final class DisplayLinkProxy: NSObject {
@@ -189,7 +194,10 @@ public class TiltScrollManager: ObservableObject {
     /// Neutral is near upright reading posture, with a dead-zone to avoid jitter.
     private func processTextContinuousMotion(_ motion: CMDeviceMotion) {
         let pitch = motion.attitude.pitch
-        let neutralPitch = -80.0 * .pi / 180.0
+        if textNeutralPitch == nil {
+            textNeutralPitch = pitch
+        }
+        let neutralPitch = textNeutralPitch ?? pitch
         let deadZone = 6.0 * .pi / 180.0
         let delta = pitch - neutralPitch
         let effectiveTilt = abs(delta) > deadZone
@@ -197,7 +205,7 @@ public class TiltScrollManager: ObservableObject {
             : 0
 
         let scale: Double = 42.0
-        var targetVelocity = CGFloat(-effectiveTilt * sensitivity * scale)
+        var targetVelocity = CGFloat(effectiveTilt * sensitivity * scale)
         targetVelocity *= speedMultiplier
         targetVelocity = max(-maxVelocity, min(targetVelocity, maxVelocity))
 
