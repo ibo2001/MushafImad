@@ -254,29 +254,17 @@ extension MushafView {
             if let cachedVerses = dataCache.getCachedVerses(forPage: currentPage) {
                 return cachedVerses
             }
-            
+
             // Fall back to Realm
             guard let page = currentPageObject else { return [] }
-            
-            switch mushafType {
-            case .hafs1441:
-                return Array(page.verses1441)
-            case .hafs1405:
-                return Array(page.verses1405)
-            }
+            return page.verses(for: mushafType)
         }
-        
+
         /// Get chapter headers for the current page directly from Page object
         /// Access the header overlays for the current page for layout decisions.
         public func getChapterHeadersForCurrentPage(mushafType: MushafType = .hafs1441) -> [ChapterHeader] {
             guard let page = currentPageObject else { return [] }
-            
-            switch mushafType {
-            case .hafs1441:
-                return Array(page.chapterHeaders1441)
-            case .hafs1405:
-                return Array(page.chapterHeaders1405)
-            }
+            return page.chapterHeaders(for: mushafType)
         }
         
         /// Check if current page is a right page

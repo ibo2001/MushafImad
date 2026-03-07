@@ -86,6 +86,7 @@ public struct MushafView: View {
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     @AppStorage("display_mode") private var displayMode: DisplayMode = .text
+    @AppStorage("mushaf_type") private var mushafType: MushafType = .hafs1441
     @AppStorage("text_font_size") private var textFontSize: Double = 24.0
     @State private var textModeInitialChapter: Int = 1
 
@@ -255,10 +256,19 @@ public struct MushafView: View {
         }
     }
 
+    /// Whether the current Mushaf type supports image-based rendering.
+    /// The 1405 layout currently lacks line images, so it falls back to text mode.
+    private var effectiveDisplayMode: DisplayMode {
+        if displayMode == .image && mushafType == .hafs1405 {
+            return .text
+        }
+        return displayMode
+    }
+
     // MARK: - View Components
     @ViewBuilder
     private var toolbarButtons: some View {
-        if displayMode == .text {
+        if effectiveDisplayMode == .text {
             Menu {
                 ForEach([16.0, 20.0, 24.0, 28.0, 32.0, 36.0], id: \.self) { size in
                     Button {
@@ -275,6 +285,22 @@ public struct MushafView: View {
                 Image(systemName: "textformat.size")
             }
         }
+        // Mushaf type picker
+        Menu {
+            ForEach(MushafType.allCases, id: \.self) { type in
+                Button {
+                    mushafType = type
+                } label: {
+                    if mushafType == type {
+                        Label(type.title, systemImage: "checkmark")
+                    } else {
+                        Text(type.title)
+                    }
+                }
+            }
+        } label: {
+            Image(systemName: "book.closed")
+        }
         Button {
             displayMode = (displayMode == .image) ? .text : .image
         } label: {
@@ -287,9 +313,9 @@ public struct MushafView: View {
         let currentHighlight = playingVerse
         ?? highlightedVerseBinding?.wrappedValue
         ?? staticHighlightedVerse
-        
+
         Group {
-            if displayMode == .text {
+            if effectiveDisplayMode == .text {
                 MushafTextView(
                     initialChapter: textModeInitialChapter,
                     highlightedVerse: currentHighlight,
@@ -386,6 +412,7 @@ public struct MushafView: View {
     public func pageContent(for pageNumber: Int, highlight: Verse?) -> some View {
         PageContainer(
             pageNumber: pageNumber,
+            mushafType: mushafType,
             highlightedVerse: highlight,
             selectedVerse: $viewModel.selectedVerse,
             onVerseLongPress: { verse in

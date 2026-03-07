@@ -35,17 +35,23 @@ public final class Chapter: Object, Identifiable {
     
     // Computed properties for compatibility with existing code
     public var startPage: Int {
-        // Get first verse's page number
-        guard let firstVerse = verses.first,
-              let page1441 = firstVerse.page1441 else { return 604 }
-        return page1441.number
+        startPage(for: .hafs1441)
     }
-    
+
     public var endPage: Int {
-        // Get last verse's page number
+        endPage(for: .hafs1441)
+    }
+
+    public func startPage(for mushafType: MushafType) -> Int {
+        guard let firstVerse = verses.first,
+              let page = firstVerse.page(for: mushafType) else { return 604 }
+        return page.number
+    }
+
+    public func endPage(for mushafType: MushafType) -> Int {
         guard let lastVerse = verses.last,
-              let page1441 = lastVerse.page1441 else { return 1 }
-        return page1441.number
+              let page = lastVerse.page(for: mushafType) else { return 1 }
+        return page.number
     }
     
     public var versesCount: Int {

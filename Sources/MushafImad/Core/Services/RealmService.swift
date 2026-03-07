@@ -164,20 +164,20 @@ public final class RealmService: RealmServiceProtocol {
         return realm?.objects(Chapter.self).filter("number == %@", number).first?.freeze()
     }
     
-    public func getChapterForPage(_ pageNumber: Int) -> Chapter? {
+    public func getChapterForPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> Chapter? {
         // Get page and find first chapter that appears on it
         guard let page = getPage(number: pageNumber) else { return nil }
-        
+
         // Check if page has chapter headers (new chapters starting on this page)
-        if let firstHeader = page.chapterHeaders1441.first {
+        if let firstHeader = page.chapterHeaders(for: mushafType).first {
             return firstHeader.chapter?.freeze()
         }
-        
+
         // Otherwise, get the chapter of the first verse on the page
-        if let firstVerse = page.verses1441.first {
+        if let firstVerse = page.verses(for: mushafType).first {
             return firstVerse.chapter?.freeze()
         }
-        
+
         return nil
     }
     
@@ -222,13 +222,7 @@ public final class RealmService: RealmServiceProtocol {
     
     public func getPageHeader(for pageNumber: Int, mushafType: MushafType = .hafs1441) -> PageHeader? {
         guard let page = getPage(number: pageNumber) else { return nil }
-        
-        switch mushafType {
-        case .hafs1441:
-            return page.header1441
-        case .hafs1405:
-            return page.header1405
-        }
+        return page.header(for: mushafType)
     }
     
     public func getPageHeaderInfo(for pageNumber: Int, mushafType: MushafType = .hafs1441) -> PageHeaderInfo? {
@@ -256,13 +250,7 @@ public final class RealmService: RealmServiceProtocol {
     
     public func getVersesForPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> [Verse] {
         guard let page = getPage(number: pageNumber) else { return [] }
-        
-        switch mushafType {
-        case .hafs1441:
-            return Array(page.verses1441.freeze())
-        case .hafs1405:
-            return Array(page.verses1405.freeze())
-        }
+        return page.verses(for: mushafType).map { $0.freeze() }
     }
     
     public func getVersesForChapter(_ chapterNumber: Int) -> [Verse] {
@@ -295,9 +283,9 @@ public final class RealmService: RealmServiceProtocol {
         return realm?.objects(Part.self).filter("number == %@", number).first?.freeze()
     }
     
-    public func getPartForPage(_ pageNumber: Int) -> Part? {
+    public func getPartForPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> Part? {
         guard let page = getPage(number: pageNumber) else { return nil }
-        return page.header1441?.part?.freeze()
+        return page.header(for: mushafType)?.part?.freeze()
     }
     
     public func getPartForVerse(chapterNumber: Int, verseNumber: Int) -> Part? {
@@ -336,9 +324,9 @@ public final class RealmService: RealmServiceProtocol {
             .filter("hizbNumber == %@ AND hizbFraction == %@", hizbNumber, fraction).first?.freeze()
     }
     
-    public func getQuarterForPage(_ pageNumber: Int) -> Quarter? {
+    public func getQuarterForPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> Quarter? {
         guard let page = getPage(number: pageNumber) else { return nil }
-        return page.header1441?.quarter?.freeze()
+        return page.header(for: mushafType)?.quarter?.freeze()
     }
     
     public func getQuarterForVerse(chapterNumber: Int, verseNumber: Int) -> Quarter? {
@@ -417,25 +405,25 @@ public final class RealmService: RealmServiceProtocol {
     
     // MARK: - Utility Methods
     
-    public func getChaptersOnPage(_ pageNumber: Int) -> [Chapter] {
+    public func getChaptersOnPage(_ pageNumber: Int, mushafType: MushafType = .hafs1441) -> [Chapter] {
         guard let page = getPage(number: pageNumber) else { return [] }
-        
+
         var chapters: Set<Chapter> = []
-        
+
         // Add chapters from headers (new chapters starting on this page)
-        for header in page.chapterHeaders1441 {
+        for header in page.chapterHeaders(for: mushafType) {
             if let chapter = header.chapter {
                 chapters.insert(chapter)
             }
         }
-        
+
         // Add chapters from verses
-        for verse in page.verses1441 {
+        for verse in page.verses(for: mushafType) {
             if let chapter = verse.chapter {
                 chapters.insert(chapter)
             }
         }
-        
+
         return Array(chapters).sorted { $0.number < $1.number }.map { $0.freeze() }
     }
     
@@ -464,9 +452,18 @@ public final class RealmService: RealmServiceProtocol {
 // MARK: - Supporting Types
 
 /// Supported Mushaf layouts that alter how verses map to pages.
-public enum MushafType {
+public enum MushafType: String, CaseIterable {
     case hafs1441  // Modern layout
     case hafs1405  // Traditional layout
+
+    public var title: String {
+        switch self {
+        case .hafs1441:
+            return String(localized: "1441")
+        case .hafs1405:
+            return String(localized: "1405")
+        }
+    }
 }
 
 // MARK: - Page Header Info Structure

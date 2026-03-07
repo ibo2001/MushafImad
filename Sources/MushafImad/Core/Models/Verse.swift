@@ -42,6 +42,30 @@ public final class Verse: Object, Identifiable {
     public var chapterNumber: Int {
         return chapter?.number ?? 0
     }
+
+    /// Returns the page for the given Mushaf layout.
+    public func page(for mushafType: MushafType) -> Page? {
+        switch mushafType {
+        case .hafs1441: return page1441
+        case .hafs1405: return page1405
+        }
+    }
+
+    /// Returns the verse marker for the given Mushaf layout.
+    public func marker(for mushafType: MushafType) -> VerseMarker? {
+        switch mushafType {
+        case .hafs1441: return marker1441
+        case .hafs1405: return marker1405
+        }
+    }
+
+    /// Returns the highlight regions for the given Mushaf layout.
+    public func highlights(for mushafType: MushafType) -> List<VerseHighlight> {
+        switch mushafType {
+        case .hafs1441: return highlights1441
+        case .hafs1405: return highlights1405
+        }
+    }
 }
 
 extension Verse {

@@ -9,10 +9,12 @@ import SwiftUI
 
 public struct PageHeaderView: View {
     public let page: Page
+    public let mushafType: MushafType
     public var horizentalPadding: CGFloat = 16
-    
-    public init(page: Page, horizentalPadding: CGFloat = 16) {
+
+    public init(page: Page, mushafType: MushafType = .hafs1441, horizentalPadding: CGFloat = 16) {
         self.page = page
+        self.mushafType = mushafType
         self.horizentalPadding = horizentalPadding
     }
     
@@ -46,8 +48,7 @@ public struct PageHeaderView: View {
     }
     
     public func getPageHeaderDisplay(page: Page) -> (juz: String?, hizb: HizbDisplayInfo?, titles: [String]) {
-        // Get the header for the current Mushaf type (defaulting to 1441)
-        guard let header = page.header1441 else {
+        guard let header = page.header(for: mushafType) else {
             return (nil, nil, [])
         }
         let titles:[String] = header.chapters.map { $0.arabicTitle }

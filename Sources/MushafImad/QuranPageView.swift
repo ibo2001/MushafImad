@@ -27,20 +27,22 @@ public struct SelectedVerseRectKey: PreferenceKey {
 public struct QuranPageView<Header: View, Footer: View>: View {
     public let pageNumber: Int
     public var page: Page
+    public let mushafType: MushafType
     public let initialHighlightedVerse: Verse?
     @Binding public var selectedVerse: Verse?
-    
+
     public var onVerseLongPress: ((Verse) -> Void)? = nil
-    
+
     private let headerBuilder: () -> Header
     private let footerBuilder: () -> Footer
-    
+
     // State to track which verse is currently being pressed (shared across all lines)
     @State private var pressingVerseID: Int? = nil
-    
+
     public init(
         pageNumber: Int,
         page: Page,
+        mushafType: MushafType = .hafs1441,
         initialHighlightedVerse: Verse?,
         selectedVerse: Binding<Verse?>,
         onVerseLongPress: ((Verse) -> Void)? = nil,
@@ -49,6 +51,7 @@ public struct QuranPageView<Header: View, Footer: View>: View {
     ) {
         self.pageNumber = pageNumber
         self.page = page
+        self.mushafType = mushafType
         self.initialHighlightedVerse = initialHighlightedVerse
         self._selectedVerse = selectedVerse
         self.onVerseLongPress = onVerseLongPress
@@ -76,9 +79,10 @@ public struct QuranPageView<Header: View, Footer: View>: View {
                         ForEach(0...14,id: \.self) { line in
                             LineImageView(
                                 pageNumber: pageNumber,
-                                chapterheader: Array(page.chapterHeaders1441),
+                                mushafType: mushafType,
+                                chapterheader: page.chapterHeaders(for: mushafType),
                                 line: line,
-                                verses: Array(page.verses1441),
+                                verses: page.verses(for: mushafType),
                                 container: CGSize(width: availableWidth, height: lineHeight),
                                 selectedVerse: selectedVerse,
                                 highlightedVerse: initialHighlightedVerse,
@@ -104,9 +108,10 @@ public struct QuranPageView<Header: View, Footer: View>: View {
                     ForEach(0...14,id: \.self) { line in
                         LineImageView(
                             pageNumber: pageNumber,
-                            chapterheader: Array(page.chapterHeaders1441),
+                            mushafType: mushafType,
+                            chapterheader: page.chapterHeaders(for: mushafType),
                             line: line,
-                            verses: Array(page.verses1441),
+                            verses: page.verses(for: mushafType),
                             container: CGSize(width: availableWidth, height: availableHeight),
                             selectedVerse: selectedVerse,
                             highlightedVerse: initialHighlightedVerse,
@@ -147,6 +152,7 @@ public struct QuranPageView<Header: View, Footer: View>: View {
 // MARK: - Line Image View
 private struct LineImageView: View {
     let pageNumber: Int
+    let mushafType: MushafType
     let chapterheader: [ChapterHeader]
     let line: Int
     let verses: [Verse]
@@ -173,7 +179,7 @@ private struct LineImageView: View {
 
     @ViewBuilder
     private func verseHighlightsView(verse: Verse, geometry: GeometryProxy) -> some View {
-        ForEach(verse.highlights1441.filter({ $0.line == line }), id: \.self) { highlight in
+        ForEach(verse.highlights(for: mushafType).filter({ $0.line == line }), id: \.self) { highlight in
             let visualLeftX = geometry.size.width * CGFloat(1.0 - highlight.right)
             let visualRightX = geometry.size.width * CGFloat(1.0 - highlight.left)
             let highlightWidth = visualRightX - visualLeftX
@@ -233,7 +239,7 @@ private struct LineImageView: View {
                     verseHighlightsView(verse: verse, geometry: geometry)
                     
                     // Only render marker if it belongs to this line
-                    if let marker = verse.marker1441, marker.line == line {
+                    if let marker = verse.marker(for: mushafType), marker.line == line {
                         let markerX = geometry.size.width * CGFloat(1.0 - marker.centerX)
                         
                         let fullImageY = scaledImageHeight * CGFloat(marker.centerY)
