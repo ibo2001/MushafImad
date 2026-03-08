@@ -33,11 +33,13 @@ public final class Chapter: Object, Identifiable {
         return ["number", "searchableText"]
     }
     
-    // Computed properties for compatibility with existing code
+    // Compatibility accessors — prefer startPage(for:)/endPage(for:) in layout-aware code
+    @available(*, deprecated, message: "Use startPage(for:) with an explicit MushafType")
     public var startPage: Int {
         startPage(for: .hafs1441)
     }
 
+    @available(*, deprecated, message: "Use endPage(for:) with an explicit MushafType")
     public var endPage: Int {
         endPage(for: .hafs1441)
     }

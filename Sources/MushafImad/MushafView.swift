@@ -155,16 +155,22 @@ public struct MushafView: View {
             await viewModel.initializePageView(initialPage: initialPage)
         }
         .onAppear {
-            if displayMode == .text {
+            if effectiveDisplayMode == .text {
                 let page = viewModel.scrollPosition ?? initialPage ?? 1
-                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page, mushafType: mushafType)?.number ?? 1
             }
         }
         .onChange(of: displayMode) { _, newMode in
             if newMode == .text {
                 let page = viewModel.scrollPosition ?? initialPage ?? 1
-                textModeInitialChapter = RealmService.shared.getChapterForPage(page)?.number ?? 1
+                textModeInitialChapter = RealmService.shared.getChapterForPage(page, mushafType: mushafType)?.number ?? 1
             }
+        }
+        .onChange(of: mushafType) { _, newType in
+            let willRenderText = displayMode == .text || (displayMode == .image && newType == .hafs1405)
+            guard willRenderText else { return }
+            let page = viewModel.scrollPosition ?? initialPage ?? 1
+            textModeInitialChapter = RealmService.shared.getChapterForPage(page, mushafType: newType)?.number ?? 1
         }
         .toolbar {
             #if os(iOS) || os(visionOS)
