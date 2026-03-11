@@ -60,9 +60,11 @@ public final class Chapter: Object, Identifiable {
         return verses.count > 0 ? verses.count : 286
     }
     
-    public var pagesCount: Int {
-        guard startPage > 0 && endPage > 0 else { return 0 }
-        return endPage - startPage + 1
+    public func pagesCount(for mushafType: MushafType) -> Int {
+        let start = startPage(for: mushafType)
+        let end = endPage(for: mushafType)
+        guard start > 0 && end > 0 else { return 0 }
+        return end - start + 1
     }
     
     public var displayTitle: String {

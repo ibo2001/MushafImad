@@ -136,10 +136,11 @@ struct VerseResultRow: View {
 struct ChapterResultRow: View {
     let chapter: Chapter
     @State private var navbarHidden: Bool = true
+    @AppStorage("mushaf_type") private var mushafType: MushafType = .hafs1441
 
     var body: some View {
         NavigationLink {
-            MushafView(initialPage: chapter.startPage, onPageTap: {
+            MushafView(initialPage: chapter.startPage(for: mushafType), onPageTap: {
                 withAnimation {
                     navbarHidden.toggle()
                 }

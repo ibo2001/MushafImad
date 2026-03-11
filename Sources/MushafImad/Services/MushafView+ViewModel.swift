@@ -125,14 +125,14 @@ extension MushafView {
         
         @MainActor
         /// Derive the active chapter for a given page, keeping UI metadata in sync.
-        public func updateCurrentChapter(for page: Int) {
+        public func updateCurrentChapter(for page: Int, mushafType: MushafType = .hafs1441) {
             currentChapter = chapters.first { chapter in
-                page >= chapter.startPage && page <= chapter.endPage
+                page >= chapter.startPage(for: mushafType) && page <= chapter.endPage(for: mushafType)
             }
         }
-        
-        public func navigateToChapter(_ chapter: Chapter) {
-            currentPage = chapter.startPage
+
+        public func navigateToChapter(_ chapter: Chapter, mushafType: MushafType = .hafs1441) {
+            currentPage = chapter.startPage(for: mushafType)
         }
         
         public func nextPage() {
@@ -152,9 +152,9 @@ extension MushafView {
         
         /// Navigate to chapter and set scroll position to its start page
         /// Jump to a chapter and update the scroll position so SwiftUI updates the pager.
-        public func navigateToChapterAndPrepareScroll(_ chapter: Chapter) {
-            navigateToChapter(chapter)
-            scrollPosition = chapter.startPage
+        public func navigateToChapterAndPrepareScroll(_ chapter: Chapter, mushafType: MushafType = .hafs1441) {
+            navigateToChapter(chapter, mushafType: mushafType)
+            scrollPosition = chapter.startPage(for: mushafType)
         }
         
         @MainActor

@@ -10,6 +10,7 @@ import SwiftUI
 public struct PlayerViewUI: View {
     @EnvironmentObject private var reciterService: ReciterService
     @StateObject private var playerViewModel = QuranPlayerViewModel()
+    @AppStorage("mushaf_type") private var mushafType: MushafType = .hafs1441
 
     public let chapter: Chapter
     public let viewModel: MushafView.ViewModel
@@ -88,7 +89,7 @@ public struct PlayerViewUI: View {
         previewVerse: Int
     ) {
         let wasPlaying = playerViewModel.isPlaying
-        withAnimation { viewModel.navigateToChapterAndPrepareScroll(target) }
+        withAnimation { viewModel.navigateToChapterAndPrepareScroll(target, mushafType: mushafType) }
         playerViewModel.configureIfNeeded(
             baseURL: baseURL,
             chapterNumber: target.number,

@@ -57,15 +57,15 @@ public final class QuranDataCacheService {
     }
     
     /// Pre-fetch and cache data for a specific chapter
-    public func cacheChapterData(_ chapter: Chapter) async {
+    public func cacheChapterData(_ chapter: Chapter, mushafType: MushafType = .hafs1441) async {
         // Cache chapter verses
         let verses = realmService.getVersesForChapter(chapter.number)
         if !verses.isEmpty {
             cachedChapterVerses[chapter.number] = verses
         }
-        
+
         // Cache all pages in this chapter
-        await cachePageRange(chapter.startPage...chapter.endPage)
+        await cachePageRange(chapter.startPage(for: mushafType)...chapter.endPage(for: mushafType))
     }
     
     // MARK: - Cache Retrieval
@@ -91,11 +91,11 @@ public final class QuranDataCacheService {
     }
     
     /// Check if chapter data is fully cached
-    public func isChapterCached(_ chapter: Chapter) -> Bool {
+    public func isChapterCached(_ chapter: Chapter, mushafType: MushafType = .hafs1441) -> Bool {
         guard cachedChapterVerses[chapter.number] != nil else { return false }
-        
+
         // Check if all pages are cached
-        for pageNumber in chapter.startPage...chapter.endPage {
+        for pageNumber in chapter.startPage(for: mushafType)...chapter.endPage(for: mushafType) {
             if !isPageCached(pageNumber) {
                 return false
             }

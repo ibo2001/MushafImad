@@ -194,7 +194,7 @@ public struct MushafView: View {
                    let baseURL = reciter.audioBaseURL,
                    let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) {
                     withAnimation {
-                        viewModel.navigateToChapterAndPrepareScroll(target)
+                        viewModel.navigateToChapterAndPrepareScroll(target, mushafType: mushafType)
                     }
                     playerViewModel.configureIfNeeded(
                         baseURL: baseURL,
