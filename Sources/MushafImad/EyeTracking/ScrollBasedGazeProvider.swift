@@ -21,8 +21,18 @@ public final class ScrollBasedGazeProvider: GazeTrackingProvider, ObservableObje
     private let linesPerPage = 15
     private let wordsPerLine: Double = 8
     private let baseSecondsPerLine: Double = 4.0
+    private var readingSpeedMultiplier: Double = 1.0
+
+    private var effectiveSecondsPerLine: Double {
+        baseSecondsPerLine * readingSpeedMultiplier
+    }
 
     public init() {}
+
+    deinit {
+        timer?.invalidate()
+        timer = nil
+    }
 
     public func startTracking() {
         guard !isTracking else { return }
@@ -46,7 +56,8 @@ public final class ScrollBasedGazeProvider: GazeTrackingProvider, ObservableObje
     }
 
     public func updateReadingSpeed(_ secondsPerLine: Double) {
-        // Reserved for future calibration
+        guard secondsPerLine > 0 else { return }
+        readingSpeedMultiplier = secondsPerLine / baseSecondsPerLine
     }
 
     private func startTimer() {
@@ -66,12 +77,12 @@ public final class ScrollBasedGazeProvider: GazeTrackingProvider, ObservableObje
 
         let elapsed = Date.now.timeIntervalSince(pageArrivalTime)
         let estimatedLine = min(
-            Int(elapsed / baseSecondsPerLine),
+            Int(elapsed / effectiveSecondsPerLine),
             linesPerPage - 1
         )
 
-        let progressInLine = (elapsed - Double(estimatedLine) * baseSecondsPerLine)
-            / baseSecondsPerLine
+        let progressInLine = (elapsed - Double(estimatedLine) * effectiveSecondsPerLine)
+            / effectiveSecondsPerLine
         let clampedProgress = min(max(progressInLine, 0), 1)
 
         // Arabic reads right-to-left: x goes from 1.0 (right) to 0.0 (left)

@@ -225,8 +225,8 @@ public struct MushafView: View {
         }
         .onChange(of: gazeTracker.shouldAdvancePage) { _, shouldAdvance in
             if shouldAdvance {
-                viewModel.nextPage()
                 gazeTracker.didAdvancePage()
+                viewModel.nextPage()
             }
         }
     }

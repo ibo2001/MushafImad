@@ -82,16 +82,15 @@ All new code follows identical patterns to existing code. Builds correctly in Xc
 #### Phase 1: Foundation (GazeTrackingService + Protocol)
 Create an abstraction layer so different tracking methods can be swapped:
 
-```
+```text
 Sources/MushafImad/EyeTracking/
   GazeTrackingProtocol.swift    - Protocol defining gaze data interface
-  GazeTrackingService.swift     - Manager that coordinates tracking + verse mapping
+  GazeTrackingService.swift     - Main coordinator (settings + tracking + verse mapping)
   GazePoint.swift               - Model for normalized gaze coordinates
-  EyeTrackingSettings.swift     - AppStorage-based settings (enabled, sensitivity, etc.)
-  EyeTrackingSettingsView.swift - Settings UI (like TiltSettingsView pattern)
+  GazeSettingsView.swift        - Settings UI (like TiltSettingsView pattern)
 ```
 
-**GazeTrackingProtocol**: Defines `startTracking()`, `stopTracking()`, and publishes `GazePoint` (x, y normalized to screen).
+**GazeTrackingProtocol**: Defines `startTracking()`, `stopTracking()`, `updatePage(_:)`, `updateReadingSpeed(_:)`, and publishes `GazePoint` (x, y normalized to screen).
 
 #### Phase 2: Fallback Heuristic Provider
 Before real eye tracking, implement a scroll-position + dwell-time heuristic:
@@ -100,7 +99,7 @@ Before real eye tracking, implement a scroll-position + dwell-time heuristic:
 - Map visible area to verses using existing `VerseHighlight` data
 - This works on ALL devices and provides immediate value
 
-```
+```text
 Sources/MushafImad/EyeTracking/
   ScrollBasedGazeProvider.swift  - Heuristic: visible area + dwell time
 ```
@@ -112,7 +111,7 @@ Real gaze estimation using ARFaceTrackingConfiguration:
 - Convert to screen coordinates
 - Map to verse positions using VerseHighlight data
 
-```
+```text
 Sources/MushafImad/EyeTracking/
   ARKitGazeProvider.swift        - ARKit-based real gaze tracking (iOS only)
 ```
@@ -124,7 +123,7 @@ Sources/MushafImad/EyeTracking/
 - Optional active verse highlighting
 
 #### Phase 5: Integration with MushafView
-- Add `EyeTrackingManager` (like `TiltScrollManager`) as `@StateObject` in `MushafView`
+- Add `GazeTrackingService` (like `TiltScrollManager`) as `@StateObject` in `MushafView`
 - Wire gaze -> verse resolution -> highlight binding
 - Add settings toggle in app preferences
 
@@ -137,10 +136,10 @@ Sources/MushafImad/EyeTracking/
 - `ScrollBasedGazeProvider.swift`
 - `ARKitGazeProvider.swift` (iOS only)
 - `GazeToVerseResolver.swift`
-- `EyeTrackingSettingsView.swift`
+- `GazeSettingsView.swift`
 
 **Existing files to modify**:
-- `MushafView.swift` - Add EyeTrackingManager state, wire to highlight binding
+- `MushafView.swift` - Add GazeTrackingService state, wire to highlight binding
 - `QuranPageView.swift` - Possibly add coordinate space name for gaze mapping
 - `MushafView+ViewModel.swift` - Add auto-save reading progress, auto-advance logic
 - `Package.swift` - No new dependencies needed (ARKit is a system framework)

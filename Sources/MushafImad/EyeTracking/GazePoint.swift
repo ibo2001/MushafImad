@@ -19,10 +19,10 @@ public struct GazePoint: Sendable, Equatable {
         timestamp: Date = .now,
         confidence: Double = 1.0
     ) {
-        self.x = x
-        self.y = y
+        self.x = min(1, max(0, x))
+        self.y = min(1, max(0, y))
         self.timestamp = timestamp
-        self.confidence = confidence
+        self.confidence = min(1, max(0, confidence))
     }
 
     public var line: Int {

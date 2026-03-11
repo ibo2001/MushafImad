@@ -13,4 +13,6 @@ public protocol GazeTrackingProvider: AnyObject, Sendable {
     var latestGazePoint: GazePoint? { get }
     func startTracking()
     func stopTracking()
+    func updatePage(_ page: Int)
+    func updateReadingSpeed(_ secondsPerLine: Double)
 }

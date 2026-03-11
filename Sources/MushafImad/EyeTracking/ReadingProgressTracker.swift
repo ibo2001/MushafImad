@@ -17,6 +17,7 @@ public final class ReadingProgressTracker: ObservableObject {
     private let resolver = GazeToVerseResolver()
     private var lastSavedVerseID: Int?
     private var lastSaveTime: Date = .distantPast
+    private let totalLines = 15
     private let saveInterval: TimeInterval = 5.0
 
     public init() {}
@@ -36,7 +37,7 @@ public final class ReadingProgressTracker: ObservableObject {
             currentVerse = resolved
         }
 
-        isOnLastLine = gazePoint.line >= 13
+        isOnLastLine = gazePoint.line >= totalLines - 1
     }
 
     public func saveProgressIfNeeded(modelContext: ModelContext) {

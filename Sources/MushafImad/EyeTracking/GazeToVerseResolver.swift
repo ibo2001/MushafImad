@@ -9,7 +9,7 @@ import Foundation
 import RealmSwift
 
 @MainActor
-public final class GazeToVerseResolver: Sendable {
+public final class GazeToVerseResolver {
     private let realmService = RealmService.shared
 
     public init() {}

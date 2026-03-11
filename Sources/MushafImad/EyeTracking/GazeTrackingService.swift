@@ -59,6 +59,8 @@ public final class GazeTrackingService: ObservableObject {
         currentPage = page
         self.mushafType = mushafType
         gazeProvider.updatePage(page)
+        currentVerse = nil
+        progressTracker.reset()
         shouldAdvancePage = false
         dwellOnLastLineStart = nil
     }
@@ -84,10 +86,13 @@ public final class GazeTrackingService: ObservableObject {
             gazeProvider.stopTracking()
             progressTracker.reset()
             shouldAdvancePage = false
+            dwellOnLastLineStart = nil
         }
     }
 
     private func handleGazeUpdate(_ point: GazePoint) {
+        guard isEnabled, isActive else { return }
+
         progressTracker.update(
             gazePoint: point,
             page: currentPage,
