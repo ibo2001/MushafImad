@@ -83,6 +83,7 @@ public struct MushafView: View {
 #if canImport(UIKit)
     @StateObject private var tiltManager = TiltScrollManager()
 #endif
+    @StateObject private var gazeTracker = GazeTrackingService()
     @AppStorage("reading_theme") private var readingTheme: ReadingTheme = .white
     @AppStorage("scrolling_mode") private var scrollingMode: ScrollingMode = .horizontal
     @AppStorage("display_mode") private var displayMode: DisplayMode = .text
@@ -208,11 +209,25 @@ public struct MushafView: View {
 #if canImport(UIKit)
             tiltManager.activate()
 #endif
+            gazeTracker.activate()
         }
         .onDisappear {
 #if canImport(UIKit)
             tiltManager.deactivate()
 #endif
+            gazeTracker.deactivate()
+        }
+        .onChange(of: viewModel.scrollPosition) { _, newPage in
+            if let page = newPage {
+                gazeTracker.updatePage(page)
+                gazeTracker.saveProgress(modelContext: modelContext)
+            }
+        }
+        .onChange(of: gazeTracker.shouldAdvancePage) { _, shouldAdvance in
+            if shouldAdvance {
+                viewModel.nextPage()
+                gazeTracker.didAdvancePage()
+            }
         }
     }
     // MARK: - Verse Action Bar
