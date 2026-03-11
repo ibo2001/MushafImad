@@ -215,12 +215,13 @@ public struct MushafView: View {
 #if canImport(UIKit)
             tiltManager.deactivate()
 #endif
+            gazeTracker.forceSaveProgress(modelContext: modelContext)
             gazeTracker.deactivate()
         }
         .onChange(of: viewModel.scrollPosition) { _, newPage in
             if let page = newPage {
+                gazeTracker.forceSaveProgress(modelContext: modelContext)
                 gazeTracker.updatePage(page)
-                gazeTracker.saveProgress(modelContext: modelContext)
             }
         }
         .onChange(of: gazeTracker.shouldAdvancePage) { _, shouldAdvance in

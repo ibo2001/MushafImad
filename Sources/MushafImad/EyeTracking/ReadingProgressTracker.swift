@@ -75,6 +75,21 @@ public final class ReadingProgressTracker: ObservableObject {
         active.lastUpdatedAt = Date.now
     }
 
+    public func forceSave(modelContext: ModelContext) {
+        guard let verse = currentVerse else { return }
+        guard verse.verseID != lastSavedVerseID else { return }
+
+        let reading = RecentReading(
+            surahNumber: verse.chapterNumber,
+            verseID: verse.verseID,
+            verseNumber: verse.verseNumber
+        )
+        modelContext.insert(reading)
+
+        lastSavedVerseID = verse.verseID
+        lastSaveTime = .now
+    }
+
     public func reset() {
         currentVerse = nil
         isOnLastLine = false

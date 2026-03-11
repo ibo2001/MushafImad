@@ -39,14 +39,30 @@ public final class GazeToVerseResolver {
         var bestMatch: Verse?
         var bestDistance: Float = .greatestFiniteMagnitude
 
+        // First, try direct hit-testing using highlight bounds
         for verse in verses {
             let highlights = verse.highlights(for: mushafType)
             for highlight in highlights where highlight.line == targetLine {
-                let midX = (highlight.left + highlight.right) / 2.0
-                let distance = abs(midX - gazeX)
-                if distance < bestDistance {
-                    bestDistance = distance
+                if gazeX >= highlight.left, gazeX <= highlight.right {
                     bestMatch = verse
+                    bestDistance = 0
+                    break
+                }
+            }
+            if bestMatch != nil { break }
+        }
+
+        // Fall back to closest-midpoint matching on the same line
+        if bestMatch == nil {
+            for verse in verses {
+                let highlights = verse.highlights(for: mushafType)
+                for highlight in highlights where highlight.line == targetLine {
+                    let midX = (highlight.left + highlight.right) / 2.0
+                    let distance = abs(midX - gazeX)
+                    if distance < bestDistance {
+                        bestDistance = distance
+                        bestMatch = verse
+                    }
                 }
             }
         }
@@ -58,6 +74,15 @@ public final class GazeToVerseResolver {
                 for highlight in highlights {
                     let lineDiff = abs(highlight.line - targetLine)
                     guard lineDiff <= 1 else { continue }
+                    // Try direct hit first on adjacent line
+                    if gazeX >= highlight.left, gazeX <= highlight.right {
+                        let distance = Float(lineDiff) * 0.5
+                        if distance < bestDistance {
+                            bestDistance = distance
+                            bestMatch = verse
+                        }
+                        continue
+                    }
                     let midX = (highlight.left + highlight.right) / 2.0
                     let distance = abs(midX - gazeX) + Float(lineDiff) * 0.5
                     if distance < bestDistance {

@@ -16,7 +16,9 @@ public final class GazeTrackingService: ObservableObject {
     }
     @AppStorage("gaze_auto_save") public var autoSaveProgress: Bool = true
     @AppStorage("gaze_auto_advance") public var autoAdvancePage: Bool = false
-    @AppStorage("gaze_reading_speed") public var readingSpeed: Double = 4.0
+    @AppStorage("gaze_reading_speed") public var readingSpeed: Double = 4.0 {
+        didSet { gazeProvider.updateReadingSpeed(readingSpeed) }
+    }
 
     @Published public private(set) var currentVerse: GazeToVerseResolver.ResolvedVerse?
     @Published public private(set) var shouldAdvancePage = false
@@ -74,6 +76,15 @@ public final class GazeTrackingService: ObservableObject {
         )
     }
 
+    public func forceSaveProgress(modelContext: ModelContext) {
+        guard isEnabled else { return }
+        progressTracker.forceSave(modelContext: modelContext)
+        progressTracker.updateKhatmaProgress(
+            page: currentPage,
+            modelContext: modelContext
+        )
+    }
+
     public func didAdvancePage() {
         shouldAdvancePage = false
         dwellOnLastLineStart = nil
@@ -81,6 +92,7 @@ public final class GazeTrackingService: ObservableObject {
 
     private func updateTrackingState() {
         if isEnabled, isActive {
+            gazeProvider.updateReadingSpeed(readingSpeed)
             gazeProvider.startTracking()
         } else {
             gazeProvider.stopTracking()
