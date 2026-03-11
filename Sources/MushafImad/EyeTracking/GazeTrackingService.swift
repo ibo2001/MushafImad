@@ -77,7 +77,7 @@ public final class GazeTrackingService: ObservableObject {
     }
 
     public func forceSaveProgress(modelContext: ModelContext) {
-        guard isEnabled else { return }
+        guard isEnabled, autoSaveProgress else { return }
         progressTracker.forceSave(modelContext: modelContext)
         progressTracker.updateKhatmaProgress(
             page: currentPage,

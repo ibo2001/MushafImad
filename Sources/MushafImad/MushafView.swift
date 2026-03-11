@@ -218,11 +218,10 @@ public struct MushafView: View {
             gazeTracker.forceSaveProgress(modelContext: modelContext)
             gazeTracker.deactivate()
         }
-        .onChange(of: viewModel.scrollPosition) { _, newPage in
-            if let page = newPage {
-                gazeTracker.forceSaveProgress(modelContext: modelContext)
-                gazeTracker.updatePage(page)
-            }
+        .onChange(of: viewModel.scrollPosition) { oldPage, newPage in
+            guard let _ = oldPage, let page = newPage else { return }
+            gazeTracker.forceSaveProgress(modelContext: modelContext)
+            gazeTracker.updatePage(page)
         }
         .onChange(of: gazeTracker.shouldAdvancePage) { _, shouldAdvance in
             if shouldAdvance {
