@@ -224,10 +224,11 @@ public struct MushafView: View {
             gazeTracker.updatePage(page)
         }
         .onChange(of: gazeTracker.shouldAdvancePage) { _, shouldAdvance in
-            if shouldAdvance {
-                gazeTracker.didAdvancePage()
-                viewModel.nextPage()
-            }
+            guard shouldAdvance,
+                  let page = viewModel.scrollPosition,
+                  page < 604 else { return }
+            gazeTracker.didAdvancePage()
+            viewModel.scrollPosition = page + 1
         }
     }
     // MARK: - Verse Action Bar
