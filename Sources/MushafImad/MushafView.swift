@@ -210,6 +210,9 @@ public struct MushafView: View {
             tiltManager.activate()
 #endif
             gazeTracker.activate()
+            if let page = viewModel.scrollPosition {
+                gazeTracker.updatePage(page)
+            }
         }
         .onDisappear {
 #if canImport(UIKit)
