@@ -192,6 +192,8 @@ MushafView(initialPage: 1)
     )
 ```
 
+Theme resolution in `MushafView` follows this precedence: `explicitReadingTheme ?? environmentReadingTheme ?? readingThemePreset.theme` (an explicit per-instance `readingTheme` passed to `MushafView` wins first, then any package-level/environment-provided theme, and finally the persisted preset default).
+
 ```swift
 struct ReaderContainer: View {
     @State private var highlightedVerse: Verse?
