@@ -140,7 +140,6 @@ public struct QuranPlayer: View {
             )
             .presentationDetents([.height(280)])
             .presentationDragIndicator(.visible)
-            .environment(\.colorScheme, .light)
         }
     }
     

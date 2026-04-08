@@ -169,8 +169,28 @@ If your app already has a `ModelContainer`, simply add `ReadingSession.self` to 
 4. **Optional configuration**
    - Use `AppStorage` keys (`reading_theme`, `scrolling_mode`, `selectedReciterId`) to persist user preferences.
    - Add `ToastOverlayView()` at the root of your layout so toasts can appear above the UI.
-   - Customize colors via assets or override `ReadingTheme` cases if you add more themes.
+   - Keep reading colors stable across system Light/Dark by providing a custom `ReadingTheme`.
    - React to user interaction with `onVerseLongPress` and `onPageTap` to drive surrounding UI, such as showing toolbars or presenting sheets.
+
+```swift
+// Per-instance reading theme override
+MushafView(
+    initialPage: 1,
+    readingTheme: ReadingTheme(
+        backgroundColor: Color(hex: "#F6F0DF"),
+        textColor: .naturalBlack
+    )
+)
+
+// Or set a package-level default for a subtree
+MushafView(initialPage: 1)
+    .mushafReadingTheme(
+        ReadingTheme(
+            backgroundColor: Color(hex: "#1F2420"),
+            textColor: .naturalWhite
+        )
+    )
+```
 
 ```swift
 struct ReaderContainer: View {
