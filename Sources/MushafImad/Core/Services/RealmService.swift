@@ -444,9 +444,9 @@ public final class RealmService: RealmServiceProtocol {
         // This depends on how sajda information is stored in the Realm file
         // For now, we can search for specific verse IDs known to have sajda
         let sajdaVerseKeys = [
-            "7:206", "13:15", "16:50", "17:109", "19:58",
-            "22:18", "22:77", "25:60", "27:26", "32:15",
-            "38:24", "41:38", "53:62", "84:21", "96:19"
+            "7_206", "13_15", "16_50", "17_109", "19_58",
+            "22_18", "22_77", "25_60", "27_26", "32_15",
+            "38_24", "41_38", "53_62", "84_21", "96_19"
         ]
         
         var sajdaVerses: [Verse] = []

@@ -37,14 +37,14 @@ public final class Chapter: Object, Identifiable {
     public var startPage: Int {
         // Get first verse's page number
         guard let firstVerse = verses.first,
-              let page1441 = firstVerse.page1441 else { return 604 }
+              let page1441 = firstVerse.page1441 else { return 1 }
         return page1441.number
     }
-    
+
     public var endPage: Int {
         // Get last verse's page number
         guard let lastVerse = verses.last,
-              let page1441 = lastVerse.page1441 else { return 1 }
+              let page1441 = lastVerse.page1441 else { return 604 }
         return page1441.number
     }
     
