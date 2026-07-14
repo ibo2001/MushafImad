@@ -133,6 +133,12 @@ public final class RealmService: RealmServiceProtocol {
     // MARK: - Chapter (Surah) Operations
     
     public func getAllChapters() -> Results<Chapter>? {
+        do {
+            try initialize()
+        } catch {
+            AppLogger.shared.error("Failed to initialize Realm in getAllChapters: \(error)", category: .realm)
+            return nil
+        }
         return realm?.objects(Chapter.self).sorted(byKeyPath: "number")
     }
     
@@ -161,6 +167,12 @@ public final class RealmService: RealmServiceProtocol {
     }
     
     public func getChapter(number: Int) -> Chapter? {
+        do {
+            try initialize()
+        } catch {
+            AppLogger.shared.error("Failed to initialize Realm in getChapter: \(error)", category: .realm)
+            return nil
+        }
         return realm?.objects(Chapter.self).filter("number == %@", number).first?.freeze()
     }
     
@@ -184,6 +196,12 @@ public final class RealmService: RealmServiceProtocol {
     // MARK: - Page Operations
     
     public func getPage(number: Int) -> Page? {
+        do {
+            try initialize()
+        } catch {
+            AppLogger.shared.error("Failed to initialize Realm in getPage: \(error)", category: .realm)
+            return nil
+        }
         return realm?.objects(Page.self).filter("number == %d", number).first?.freeze()
     }
     
@@ -215,6 +233,12 @@ public final class RealmService: RealmServiceProtocol {
     }
     
     public func getTotalPages() -> Int {
+        do {
+            try initialize()
+        } catch {
+            AppLogger.shared.error("Failed to initialize Realm in getTotalPages: \(error)", category: .realm)
+            return 604
+        }
         return realm?.objects(Page.self).count ?? 604
     }
     

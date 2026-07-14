@@ -346,7 +346,7 @@ public final class QuranPlayerViewModel: ObservableObject {
     /// Seek to a specific verse within the current chapter using timing data
     @discardableResult
     public func seekToVerse(_ verseNumber: Int) -> Bool {
-        guard verseNumber > 0, chapterNumber > 0, reciterId > 0 else { return false }
+        guard verseNumber >= 0, chapterNumber > 0, reciterId > 0 else { return false }
         guard let timing = AyahTimingService.shared.getTiming(
             for: reciterId,
             surahId: chapterNumber,
@@ -427,7 +427,7 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     // Preview a verse when paused: update highlight and defer seek to play()
     public func setPreviewVerse(_ verseNumber: Int) {
-        guard verseNumber > 0 else { return }
+        guard verseNumber >= 0 else { return }
         currentVerseNumber = verseNumber
         pendingResumeVerse = verseNumber
     }

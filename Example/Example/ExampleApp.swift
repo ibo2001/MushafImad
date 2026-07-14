@@ -32,6 +32,7 @@ struct ExampleApp: App {
             ContentView()
                 .environmentObject(ReciterService.shared)
                 .environmentObject(toastManager)
+                .modelContainer(for: [ReadingSession.self])
         }
         #if os(macOS)
         .windowStyle(.hiddenTitleBar)
