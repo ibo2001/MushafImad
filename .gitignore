@@ -58,3 +58,4 @@ agents/
 # Node.js (not used — prevent accidental commits)
 package-lock.json
 node_modules/
+AUDIT_FIXES_HANDOFF.md
