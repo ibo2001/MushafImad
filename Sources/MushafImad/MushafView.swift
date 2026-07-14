@@ -242,6 +242,18 @@ public struct MushafView: View {
                 eyeTrackingCoordinator.resume()
             }
         }
+        .onChange(of: playerViewModel.currentVerseNumber) { _, newValue in
+            guard let verseNumber = newValue else { playingVerse = nil; return }
+            let chapterNumber = playerViewModel.chapterNumber
+            guard chapterNumber > 0 else { return }
+            let isOpeningBaismala = verseNumber < 1
+            guard let verse = RealmService.shared.getVerse(
+                chapterNumber: chapterNumber, verseNumber: max(verseNumber, 1)) else { return }
+            playingVerse = isOpeningBaismala ? nil : verse
+            if let page = verse.page1441?.number, page != viewModel.scrollPosition {
+                withAnimation { viewModel.scrollPosition = page }
+            }
+        }
     }
     // MARK: - Verse Action Bar
 
