@@ -1,0 +1,22 @@
+Sources/MushafImad/AudioPlayer/Services/ReciterDataProvider.swift
+  s_e099777c255c7e::t_88c15fa91faefd 39-40,42-54
+Tests/MushafImadSPMTests/ReciterDataProviderTests.swift
+  s_e099777c255c7e::t_418c041b3b6ca4 1-9,11-57
+  s_e099777c255c7e::t_9c1a6625e703c6 10
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "cd06c1d40723f011356e1262f5fe4233a6c8396d",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
