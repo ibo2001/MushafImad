@@ -1,0 +1,21 @@
+docs/superpowers/specs/2026-07-16-unify-quran-player-design.md
+  s_e099777c255c7e::t_9fe2aefb821ac9 240-257
+  s_e099777c255c7e::t_0fb770b90426c1 232-238
+  s_e099777c255c7e::t_112c44ac34aa8b 317-329
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "400bb13ab4637a0313491bbbe0df41d09ccfc55a",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
