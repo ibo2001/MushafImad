@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import CoreGraphics
+import QuartzCore
 @testable import MushafImad
 
 /// Tests for ReadingProgressTracker to ensure dwell time detection, progress state transitions,
@@ -20,7 +21,11 @@ struct ReadingProgressTrackerTests {
     ) -> Verse {
         let verse = Verse()
         verse.verseID = id
-        verse.chapterNumber = chapterNumber
+        // `chapterNumber` is derived from the linked chapter, so link one rather
+        // than assigning it directly.
+        let chapter = Chapter()
+        chapter.number = chapterNumber
+        verse.chapter = chapter
         verse.number = number
         verse.text = "Mock verse \(number)"
         
@@ -588,7 +593,7 @@ struct ReadingProgressTrackerTests {
     func testSessionTracksTrackingMethod() async {
         // Arrange
         let tracker = ReadingProgressTracker()
-        tracker.trackingMethod = .fallback
+        tracker.trackingMethod = .heuristic
         
         let pageFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
         let verses = [
@@ -601,7 +606,7 @@ struct ReadingProgressTrackerTests {
         tracker.stopTracking()
         
         // Assert
-        #expect(tracker.currentSession?.trackingMethod == .fallback)
+        #expect(tracker.currentSession?.trackingMethod == .heuristic)
     }
     
     // MARK: - Geometry Update Tests
