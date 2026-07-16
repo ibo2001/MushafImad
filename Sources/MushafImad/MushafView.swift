@@ -214,17 +214,12 @@ public struct MushafView: View {
             }
         }
         // Only follow playback when the host has not taken ownership of the highlight;
-        // a host-supplied binding stays authoritative exactly as before.
+        // a host-supplied binding or a static highlight stays authoritative exactly as before.
         .onChange(of: playerCoordinator.nowPlaying) { _, nowPlaying in
-            guard highlightedVerseBinding == nil else { return }
-            guard let nowPlaying else { playingVerse = nil; return }
-            let isOpeningBasmala = nowPlaying.verseNumber < 1
-            guard let verse = RealmService.shared.getVerse(
-                chapterNumber: nowPlaying.chapterNumber,
-                verseNumber: max(nowPlaying.verseNumber, 1)
-            ) else { return }
-            playingVerse = isOpeningBasmala ? nil : verse
-            withAnimation { viewModel.followVerse(verse) }
+            followNowPlaying(nowPlaying)
+        }
+        .onAppear {
+            followNowPlaying(playerCoordinator.nowPlaying)
         }
         // A host that drives playback owns its own player and highlights through this binding,
         // so this is the path that carries recitation into the reader.
@@ -232,6 +227,24 @@ public struct MushafView: View {
             withAnimation { viewModel.followVerse(highlightedVerseBinding?.wrappedValue) }
         }
     }
+
+    // MARK: - Playback Following
+
+    /// Follow the coordinator's now-playing verse, unless the host owns the highlight
+    /// (via a binding or a static verse passed to the initializer). Shared by the
+    /// `.onChange` transition handler and the `.onAppear` seed so they can't drift apart.
+    private func followNowPlaying(_ nowPlaying: QuranPlayerCoordinator.NowPlaying?) {
+        guard highlightedVerseBinding == nil, staticHighlightedVerse == nil else { return }
+        guard let nowPlaying else { playingVerse = nil; return }
+        let isOpeningBasmala = nowPlaying.verseNumber < 1
+        guard let verse = RealmService.shared.getVerse(
+            chapterNumber: nowPlaying.chapterNumber,
+            verseNumber: max(nowPlaying.verseNumber, 1)
+        ) else { return }
+        playingVerse = isOpeningBasmala ? nil : verse
+        withAnimation { viewModel.followVerse(verse) }
+    }
+
     // MARK: - Verse Action Bar
 
     @ViewBuilder
