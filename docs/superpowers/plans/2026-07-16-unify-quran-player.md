@@ -643,7 +643,7 @@ git commit -m "docs: record manual verification of the unified player"
 
 ## Done when
 
-- All 23 `QuranPlayerCoordinatorTests` pass (9 pre-existing + 9 from Task 1 + 5 covering Task 2's push path), and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass.
+- All 24 `QuranPlayerCoordinatorTests` pass (9 pre-existing + 9 from Task 1 + 5 covering Task 2's push path + 1 for the reclaim race), and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass. Full suite, run **serially**: 154 tests, exactly the 11 pre-existing eye-tracking failures, zero warnings. Run serially — default parallel execution is flaky here (shared-singleton isolation) and silently covers less.
 - The Example app builds and runs.
 - The four manual checks in Task 5 are recorded with honest results.
 - Only the 11 pre-existing eye-tracking failures remain in the suite.
