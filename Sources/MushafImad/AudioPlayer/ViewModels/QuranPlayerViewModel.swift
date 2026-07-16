@@ -672,9 +672,17 @@ public final class QuranPlayerViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
 
+                // `resignActivePlayback()` only prevents a *future* EOF by pausing before one is
+                // reached. It cannot reach into an EOF that has already been posted: this
+                // notification handler hops onto the MainActor via `Task`, so the enqueued turn
+                // can run *after* another player has registered and paused this one. If repeat
+                // is on, `play()` below would then call `becomeActivePlayer()` and silently steal
+                // the slot back from whoever just took it. Re-check ownership before restarting,
+                // same as the seek continuations in `play()`/`seekToVerse(_:)`.
                 if self.isRepeatEnabled {
                     self.seek(to: 0) { [weak self] in
-                        self?.play()
+                        guard let self, QuranPlayerCoordinator.shared.activePlayer === self else { return }
+                        self.play()
                     }
                 } else {
                     self.playbackState = .finished
