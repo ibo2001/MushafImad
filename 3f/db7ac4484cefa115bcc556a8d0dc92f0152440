@@ -1,0 +1,24 @@
+Tests/MushafImadSPMTests/MushafViewFollowVerseTests.swift
+  s_e099777c255c7e::t_6b3a2a20639fa9 1-31,66
+  s_e099777c255c7e::t_b9a410461212dc 32-65
+Sources/MushafImad/Services/MushafView+ViewModel.swift
+  s_e099777c255c7e::t_168dd386de458a 159-165
+Sources/MushafImad/MushafView.swift
+  s_e099777c255c7e::t_f810ceb48f635c 253-258
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "3fdb7ac4484cefa115bcc556a8d0dc92f0152440",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
