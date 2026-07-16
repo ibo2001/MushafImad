@@ -325,7 +325,7 @@ player. Pushes from a player that is no longer active are ignored."
 
 **Context you need:** `currentVerseNumber` (`:35`) is the single place the playing verse changes. `updateCurrentVerse()` (`:260`) sets it during playback; `stop()` (`:189`) sets it to `nil`. Hanging the push off `didSet` therefore covers playing, seeking and stopping with one hook — do not add pushes at call sites.
 
-This task has no unit test. Driving it requires a real `AVPlayer` reaching `.playing`, and `currentVerseNumber` is `@Published public private(set)` so no test can set it (see Global Constraints). Task 1 covers the receiving logic; this is the wiring, verified in Task 5.
+**Correction (applied after review).** This section originally claimed the task had no unit test, because `currentVerseNumber` is `@Published public private(set)`. That was wrong: the public `setPreviewVerse(_:)` assigns it and the public `stop()` nils it, both with no `AVPlayer` and no I/O, so the push path is testable through the real public API. The wiring is covered in `QuranPlayerCoordinatorTests`. Only registration on a real `play()` needs the simulator (Task 5).
 
 - [ ] **Step 1: Push verse changes from `didSet`**
 
@@ -356,26 +356,24 @@ Immediately above `private func ensureBackgroundSupport()` (around `:279`), add:
     /// A player that starts playing becomes the active one. Doing this here rather than in a
     /// view means a host cannot forget to register (which is how VerseByVerseDemo's remote
     /// commands went dead).
+    ///
+    /// Registration clears the coordinator's projection, so push current state straight after:
+    /// `didSet` fires only on *change*, and a player resuming on the verse it was already on
+    /// reassigns nothing. Without this push the highlight stays blank until the next verse.
+    /// The push is a pure projection write, so doing it redundantly is harmless.
     private func becomeActivePlayer() {
         QuranPlayerCoordinator.shared.registerActivePlayer(self)
+        QuranPlayerCoordinator.shared.playerDidUpdateVerse(
+            self, chapter: chapterNumber, verse: currentVerseNumber
+        )
     }
 ```
 
-- [ ] **Step 3: Register from both start entry points**
+- [ ] **Step 3: Register from `play()` only**
 
-In `startIfNeeded(autoPlay:)` (`:161`), insert `becomeActivePlayer()` after the configuration guard and before `ensureBackgroundSupport()`, so it reads:
+**Correction (applied after review).** This step originally also called `becomeActivePlayer()` from `startIfNeeded(autoPlay:)`. That was wrong: `startIfNeeded` runs from `QuranPlayer.swift:73`'s `.task` on appear and from `seekToVerse` with `autoPlay: false`, so a player that never plays would seize the slot and silently pause the one that *is* playing — contradicting this task's own premise that a player which **starts playing** becomes active.
 
-```swift
-        guard hasValidConfiguration else {
-            playbackState = .failed(String(localized: "Audio playback is not configured."))
-            return
-        }
-
-        becomeActivePlayer()
-        ensureBackgroundSupport()
-```
-
-In `play()` (`:306`), insert `becomeActivePlayer()` as the first line, so it reads:
+Register from `play()` only. Insert `becomeActivePlayer()` as its first line:
 
 ```swift
     public func play() {
@@ -386,6 +384,8 @@ In `play()` (`:306`), insert `becomeActivePlayer()` as the first line, so it rea
             return
         }
 ```
+
+This is sufficient: every real start funnels through `play()`. The `.idle`/`.failed` path goes `preparePlayer(autoPlay:)` → async load → `observeStatus` (`:567-568`) → `play()` when `shouldAutoStart`; the `.paused`/`.ready`/`.finished` path calls `play()` directly when `autoPlay`. So `autoPlay: false` never registers, and nothing that plays is missed.
 
 - [ ] **Step 4: Verify nothing regressed**
 
@@ -640,7 +640,7 @@ git commit -m "docs: record manual verification of the unified player"
 
 ## Done when
 
-- All 18 `QuranPlayerCoordinatorTests` pass (9 pre-existing + 9 new), and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass.
+- All 23 `QuranPlayerCoordinatorTests` pass (9 pre-existing + 9 from Task 1 + 5 covering Task 2's push path), and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass.
 - The Example app builds and runs.
 - The four manual checks in Task 5 are recorded with honest results.
 - Only the 11 pre-existing eye-tracking failures remain in the suite.

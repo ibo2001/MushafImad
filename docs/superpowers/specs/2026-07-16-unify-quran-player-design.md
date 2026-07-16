@@ -111,13 +111,19 @@ That property is the single place the playing verse changes, and it already cove
 and clears `nowPlaying` — reproducing the old `.idle → playingVerse = nil` behaviour with no
 separate stop hook to keep in sync.
 
-This is chosen over a Combine subscription for two reasons. It removes subscription lifecycle
-entirely (no re-subscribing when `activePlayer` swaps, no cancellable bookkeeping). And it is
-testable: `currentVerseNumber` and `playbackState` are `@Published public private(set)`, which
-`@testable` cannot bypass, so a test can never drive a real player's published state. A
-coordinator that observed the player could not be unit-tested without widening those setters
-(exposing mutability publicly) or adding a test-only method (an anti-pattern). Pushing keeps the
-production path and the test path identical.
+This is chosen over a Combine subscription because it removes subscription lifecycle entirely:
+no re-subscribing when `activePlayer` swaps, no cancellable bookkeeping.
+
+It is also directly testable. `currentVerseNumber` is `@Published public private(set)`, but the
+public `setPreviewVerse(_:)` assigns it and the public `stop()` nils it, both without an
+`AVPlayer` or any I/O — so the whole push path can be driven through the real public API, with
+no widened setter and no test-only seam.
+
+An earlier draft of this spec claimed the opposite — that no test could reach that state — and
+used it to justify shipping the wiring untested. That was wrong, and it cost something concrete:
+`registerActivePlayer` clears the projection, while `didSet` fires only on *change*, so a player
+resuming on an unchanged verse republished nothing and left the highlight blank for the rest of
+the ayah. The tests that premise excused are exactly the ones that catch it.
 
 Auto-registration already requires the player to reference the coordinator, so this adds no new
 coupling direction.
@@ -215,6 +221,8 @@ This keeps the new capability strictly additive.
 - active player deallocates → `activePlayer` and `nowPlaying` both clear
 - `playerDidUpdateVerse` from a non-active player → `nowPlaying` unchanged
 - `nowPlaying` projection, including verse 0
+- the player's push path, driven via the public `setPreviewVerse(_:)` / `stop()`: publish on
+  change, clear on nil, ignore when not active, and republish on regaining the active slot
 - `MushafView.ViewModel.followVerse` — already covered by `MushafViewFollowVerseTests`
 
 `QuranPlayerViewModel.init` is trivial (no `AVPlayer`, no I/O), so real instances are cheap to
@@ -224,6 +232,7 @@ construct in tests.
 
 - the actual audio pause on swap (`pause()` no-ops on an unconfigured player, so a test cannot
   observe it)
+- registration on a real `play()`, which needs an `AVPlayer` reaching `.playing`
 - lock-screen late binding (global `MPRemoteCommandCenter`)
 - the page turn during playback
 
