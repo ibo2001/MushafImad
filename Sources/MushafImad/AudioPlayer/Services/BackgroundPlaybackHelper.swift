@@ -38,12 +38,16 @@ public final class BackgroundPlaybackHelper {
     // `LockScreenMetadataManager.shared.setupRemoteCommands(...)` at launch to
     // replace these defaults (for example, to register skip ±10s instead of
     // next/previous).
+    // Resolve the player when the command fires, not when it is registered. These handlers
+    // outlive any single player: the first attach wins the registration guard above and
+    // detach() cannot clear MPRemoteCommandCenter, so a captured player would strand the
+    // lock screen on a dead reference.
     if !LockScreenMetadataManager.shared.hasRegisteredCommands() {
       LockScreenMetadataManager.shared.setupRemoteCommands(
         .init(
-          onPlayPause: { [weak player] in player?.togglePlayback() },
-          onSkipForward: { [weak player] in _ = player?.seekToNextVerse() },
-          onSkipBackward: { [weak player] in _ = player?.seekToPreviousVerse() }
+          onPlayPause: { QuranPlayerCoordinator.shared.activePlayer?.togglePlayback() },
+          onSkipForward: { _ = QuranPlayerCoordinator.shared.activePlayer?.seekToNextVerse() },
+          onSkipBackward: { _ = QuranPlayerCoordinator.shared.activePlayer?.seekToPreviousVerse() }
         )
       )
     }
