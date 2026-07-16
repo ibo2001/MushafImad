@@ -74,9 +74,8 @@ public struct MushafView: View {
     private let externalPageTapHandler: (() -> Void)?
 
     @State private var viewModel = ViewModel()
-    @StateObject private var playerViewModel = QuranPlayerViewModel()
+    @ObservedObject private var playerCoordinator = QuranPlayerCoordinator.shared
     @StateObject private var eyeTrackingCoordinator = EyeTrackingCoordinator()
-    @EnvironmentObject private var reciterService: ReciterService
     @EnvironmentObject private var toastManager: ToastManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -191,34 +190,6 @@ public struct MushafView: View {
             }
             #endif
         }
-        .onChange(of: playerViewModel.playbackState) { oldState, newState in
-            // Clear highlighting when playback stops
-            switch newState {
-            case .idle:
-                playingVerse = nil
-            case .finished:
-                if !reciterService.isLoading,
-                   let reciter = reciterService.selectedReciter,
-                   let baseURL = reciter.audioBaseURL,
-                   let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) {
-                    withAnimation {
-                        viewModel.navigateToChapterAndPrepareScroll(target)
-                    }
-                    playerViewModel.configureIfNeeded(
-                        baseURL: baseURL,
-                        chapterNumber: target.number,
-                        chapterName: target.displayTitle,
-                        reciterName: reciter.displayName,
-                        reciterId: reciter.id,
-                        timingSource: reciter.timingSource
-                    )
-                    playerViewModel.startIfNeeded(autoPlay: true)
-                }
-
-            default:
-                break
-            }
-        }
         .onAppear {
 #if canImport(UIKit)
             tiltManager.activate()
@@ -242,14 +213,17 @@ public struct MushafView: View {
                 eyeTrackingCoordinator.resume()
             }
         }
-        .onChange(of: playerViewModel.currentVerseNumber) { _, newValue in
-            guard let verseNumber = newValue else { playingVerse = nil; return }
-            let chapterNumber = playerViewModel.chapterNumber
-            guard chapterNumber > 0 else { return }
-            let isOpeningBaismala = verseNumber < 1
+        // Only follow playback when the host has not taken ownership of the highlight;
+        // a host-supplied binding stays authoritative exactly as before.
+        .onChange(of: playerCoordinator.nowPlaying) { _, nowPlaying in
+            guard highlightedVerseBinding == nil else { return }
+            guard let nowPlaying else { playingVerse = nil; return }
+            let isOpeningBasmala = nowPlaying.verseNumber < 1
             guard let verse = RealmService.shared.getVerse(
-                chapterNumber: chapterNumber, verseNumber: max(verseNumber, 1)) else { return }
-            playingVerse = isOpeningBaismala ? nil : verse
+                chapterNumber: nowPlaying.chapterNumber,
+                verseNumber: max(nowPlaying.verseNumber, 1)
+            ) else { return }
+            playingVerse = isOpeningBasmala ? nil : verse
             withAnimation { viewModel.followVerse(verse) }
         }
         // A host that drives playback owns its own player and highlights through this binding,
