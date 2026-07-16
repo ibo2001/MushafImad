@@ -78,14 +78,24 @@ demonstrates.
 ```swift
 public struct NowPlaying: Equatable, Sendable {
     public let chapterNumber: Int
-    public let verseNumber: Int?   // nil until timing resolves; 0 = basmala
+    public let verseNumber: Int     // 0 = basmala
 }
 
-@Published public private(set) var nowPlaying: NowPlaying?
+public var nowPlaying: NowPlaying?   // nil when nothing is playing or no verse resolved
 ```
 
 Deliberately minimal — chapter and verse only. It exists so views can follow playback without
 holding a player. Anything larger becomes a mirror that drifts.
+
+`verseNumber` is non-optional and the whole projection is optional, rather than an optional
+verse inside a non-optional projection. A double optional would make "playing but no verse
+resolved yet" and "not playing" two spellings of the same visual state, and every consumer would
+have to unwrap twice to say the same thing. One optional, one meaning: `nil` means nothing to
+follow.
+
+`nowPlaying` is a computed property backed by `@Published private var storedNowPlaying`, so it
+can return `nil` the moment the weak `_activePlayer` dies — a stored property could not, since
+deallocation of a weak referent fires no notification.
 
 ### Push, not subscribe
 
@@ -95,8 +105,11 @@ The player pushes its verse to the coordinator:
 public func playerDidUpdateVerse(_ player: QuranPlayerViewModel, chapter: Int, verse: Int?)
 ```
 
-`QuranPlayerViewModel` updates `currentVerseNumber` in exactly one place
-(`QuranPlayerViewModel.swift:273`) and calls this alongside it.
+The push hangs off a `didSet` on `currentVerseNumber` rather than being sprinkled at call sites.
+That property is the single place the playing verse changes, and it already covers stopping:
+`stop()` sets `currentVerseNumber = nil` (`QuranPlayerViewModel.swift:189`), which pushes `nil`
+and clears `nowPlaying` — reproducing the old `.idle → playingVerse = nil` behaviour with no
+separate stop hook to keep in sync.
 
 This is chosen over a Combine subscription for two reasons. It removes subscription lifecycle
 entirely (no re-subscribing when `activePlayer` swaps, no cancellable bookkeeping). And it is
