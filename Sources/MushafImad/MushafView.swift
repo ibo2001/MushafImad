@@ -164,6 +164,10 @@ public struct MushafView: View {
         }
         .task {
             await viewModel.initializePageView(initialPage: initialPage)
+            // initializePageView unconditionally overwrites scrollPosition once its load
+            // completes, so seeding the now-playing verse has to happen after it finishes —
+            // seeding first would just get clobbered by that unconditional assignment.
+            followNowPlaying(playerCoordinator.nowPlaying)
         }
         .onAppear {
             if displayMode == .text {
@@ -217,9 +221,6 @@ public struct MushafView: View {
         // a host-supplied binding or a static highlight stays authoritative exactly as before.
         .onChange(of: playerCoordinator.nowPlaying) { _, nowPlaying in
             followNowPlaying(nowPlaying)
-        }
-        .onAppear {
-            followNowPlaying(playerCoordinator.nowPlaying)
         }
         // A host that drives playback owns its own player and highlights through this binding,
         // so this is the path that carries recitation into the reader.
