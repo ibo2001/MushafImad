@@ -32,7 +32,14 @@ public final class QuranPlayerViewModel: ObservableObject {
     @Published public private(set) var isBuffering: Bool = false
     @Published public private(set) var isScrubbing: Bool = false
     @Published public var isRepeatEnabled: Bool = false
-    @Published public private(set) var currentVerseNumber: Int? = nil
+    @Published public private(set) var currentVerseNumber: Int? = nil {
+        didSet {
+            guard currentVerseNumber != oldValue else { return }
+            QuranPlayerCoordinator.shared.playerDidUpdateVerse(
+                self, chapter: chapterNumber, verse: currentVerseNumber
+            )
+        }
+    }
 
     // MARK: - Public Configuration
 
@@ -166,6 +173,7 @@ public final class QuranPlayerViewModel: ObservableObject {
             return
         }
 
+        becomeActivePlayer()
         ensureBackgroundSupport()
 
         switch playbackState {
@@ -276,6 +284,13 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     // MARK: - Playback Controls
 
+    /// A player that starts playing becomes the active one. Doing this here rather than in a
+    /// view means a host cannot forget to register (which is how VerseByVerseDemo's remote
+    /// commands went dead).
+    private func becomeActivePlayer() {
+        QuranPlayerCoordinator.shared.registerActivePlayer(self)
+    }
+
     private func ensureBackgroundSupport() {
         if backgroundHelper == nil {
             let helper = BackgroundPlaybackHelper()
@@ -304,6 +319,8 @@ public final class QuranPlayerViewModel: ObservableObject {
     }
 
     public func play() {
+        becomeActivePlayer()
+
         guard let player else {
             preparePlayer(autoPlay: true)
             return
