@@ -1,0 +1,23 @@
+Example/Example/ExampleApp.swift
+  s_e099777c255c7e::t_36f3faeaa37beb 9
+Package.swift
+  s_e099777c255c7e::t_011e81f9fafb72 20
+Example/Example.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
+  s_e099777c255c7e::t_1185465709bb77 2,9-10,18-19
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "0f748cb7d9436a3f41d343eeaf0c5c37adc4fd1a",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
