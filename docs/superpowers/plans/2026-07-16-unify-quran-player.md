@@ -48,7 +48,7 @@ xcodebuild build -project Example/Example.xcodeproj -scheme Example \
 | File | Responsibility | Change |
 |---|---|---|
 | `Sources/MushafImad/AudioPlayer/Services/QuranPlayerCoordinator.swift` | Single source of truth: active player + `NowPlaying` projection | Modify |
-| `Sources/MushafImad/AudioPlayer/ViewModels/QuranPlayerViewModel.swift` | Self-register on play; push verse changes | Modify (`:35`, `:161`, `:306`) |
+| `Sources/MushafImad/AudioPlayer/ViewModels/QuranPlayerViewModel.swift` | Self-register on play; push verse changes | Modify (`:35`, `:306`) |
 | `Sources/MushafImad/AudioPlayer/Services/BackgroundPlaybackHelper.swift` | Late-bound default remote commands | Modify (`:37-49`) |
 | `Sources/MushafImad/MushafView.swift` | Follow `nowPlaying` instead of owning a player | Modify (`:77`, `:194-217`, `:245-260`) |
 | `Tests/MushafImadSPMTests/QuranPlayerCoordinatorTests.swift` | Coordinator behaviour | Modify (extend existing suite) |
@@ -317,7 +317,7 @@ player. Pushes from a player that is no longer active are ignored."
 ### Task 2: Player self-registers and pushes its verse
 
 **Files:**
-- Modify: `Sources/MushafImad/AudioPlayer/ViewModels/QuranPlayerViewModel.swift` (`:35`, `:161`, `:306`)
+- Modify: `Sources/MushafImad/AudioPlayer/ViewModels/QuranPlayerViewModel.swift` (`:35` didSet, `:306` play())
 
 **Interfaces:**
 - Consumes: `QuranPlayerCoordinator.shared.registerActivePlayer(_:)`, `QuranPlayerCoordinator.shared.playerDidUpdateVerse(_:chapter:verse:)` (Task 1).
