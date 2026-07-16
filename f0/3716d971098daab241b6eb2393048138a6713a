@@ -1,0 +1,28 @@
+docs/superpowers/plans/2026-07-16-unify-quran-player.md
+  s_e099777c255c7e::t_8c6080c7c30ef6 296
+  s_e099777c255c7e::t_78caf5b019f88a 1-160,166-167,169-295,297-506,508-530,541-569,571-647
+  s_e099777c255c7e::t_75e86ff0119b5c 507
+  s_e099777c255c7e::t_d311d70a070de5 161-165,168
+  s_e099777c255c7e::t_8e9316dae4db4a 531-540
+  s_e099777c255c7e::t_d07a7d8ad6494b 570
+docs/superpowers/specs/2026-07-16-unify-quran-player-design.md
+  s_e099777c255c7e::t_3278e97ca0a12d 108-112
+  s_e099777c255c7e::t_fa259597c28c3a 81,84,90-98
+  s_e099777c255c7e::t_3bf2aa3e6039c8 99
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "f03716d971098daab241b6eb2393048138a6713a",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
