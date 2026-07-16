@@ -50,12 +50,14 @@ public final class QuranPlayerCoordinator: ObservableObject {
 
     private init() {}
 
-    /// Call when a player view appears and becomes the primary playback surface.
-    /// Playback is exclusive: the outgoing player is paused.
+    /// Call when a player becomes the primary playback surface.
+    /// Playback is exclusive: the outgoing player is told to stand down. `resignActivePlayback()`
+    /// rather than `pause()` because pause() no-ops on a player that is not already `.playing` —
+    /// one still loading or seeking would ignore it and start audio after losing the slot.
     public func registerActivePlayer(_ player: QuranPlayerViewModel) {
         guard _activePlayer !== player else { return }
         objectWillChange.send()
-        _activePlayer?.pause()
+        _activePlayer?.resignActivePlayback()
         _activePlayer = player
         storedNowPlaying = nil
     }

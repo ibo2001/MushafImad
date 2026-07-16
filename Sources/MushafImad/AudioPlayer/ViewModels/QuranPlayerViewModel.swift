@@ -347,6 +347,13 @@ public final class QuranPlayerViewModel: ObservableObject {
             pendingResumeVerse = nil
             seek(to: targetSeconds) { [weak self] in
                 guard let self, let player = self.player else { return }
+                // A zero-tolerance seek on a remote asset can take seconds. Another player may
+                // have taken the slot in the meantime, so re-check before making noise —
+                // otherwise both would be audible.
+                guard QuranPlayerCoordinator.shared.activePlayer === self else {
+                    self.playbackState = .paused
+                    return
+                }
                 player.playImmediately(atRate: self.playbackRate)
                 self.playbackState = .playing
             }
@@ -361,6 +368,23 @@ public final class QuranPlayerViewModel: ObservableObject {
         guard let player, playbackState == .playing else { return }
         player.pause()
         playbackState = .paused
+    }
+
+    /// Tell an outgoing player to stand down, called by the coordinator when another player
+    /// takes the active slot. `pause()` alone is not enough: it no-ops unless the player is
+    /// already `.playing`, so a player that is still loading or seeking sails straight past it
+    /// and starts audio *after* it has lost the slot. Cancelling the deferred-start intents is
+    /// what actually stops that.
+    ///
+    /// `pendingResumeVerse` is deliberately left alone: it is a user-visible position (set by
+    /// `setPreviewVerse` from the long-press flow and paired with `currentVerseNumber`), not an
+    /// instruction to start audio. Clearing it would strand the highlight on a verse the next
+    /// `play()` no longer resumes from. The seek continuation in `play()` re-checks the slot
+    /// instead, which is where the actual audio start happens.
+    func resignActivePlayback() {
+        shouldAutoStart = false
+        shouldResumeAfterSeek = false
+        pause()
     }
 
     public func cyclePlaybackRate() {
@@ -400,7 +424,11 @@ public final class QuranPlayerViewModel: ObservableObject {
             guard let self else { return }
             // Ensure highlight updates even when paused
             self.updateCurrentVerse()
-            if shouldResume { self.play() }
+            // `shouldResume` is captured, so `resignActivePlayback()` cannot cancel it. Re-check
+            // the slot here instead: this player paused itself to seek, so a player that took
+            // over meanwhile would be silently paused again by the play() below.
+            guard shouldResume, QuranPlayerCoordinator.shared.activePlayer === self else { return }
+            self.play()
         }
         return true
     }

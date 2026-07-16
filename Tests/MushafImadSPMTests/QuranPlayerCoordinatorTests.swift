@@ -279,4 +279,68 @@ struct QuranPlayerCoordinatorTests {
 
         #expect(QuranPlayerCoordinator.shared.activePlayer === activePlayer)
     }
+
+    // MARK: - Exclusivity across async loading
+
+    /// Writes a silent WAV and returns the directory to use as a player `baseURL`. The file is
+    /// named `001.mp3` because that is the path `resolveAudioURLForPlayback()` builds for
+    /// chapter 1; AVFoundation sniffs the container rather than trusting the extension, so this
+    /// reaches `.readyToPlay` from disk with no network and no fixture to check in.
+    private func makeSilentAudioDirectory() throws -> URL {
+        let directory = URL(fileURLWithPath: NSTemporaryDirectory())
+            .appendingPathComponent(UUID().uuidString, isDirectory: true)
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+
+        let sampleRate = 8000, channels = 1, bitsPerSample = 16
+        let byteCount = sampleRate * channels * bitsPerSample / 8  // one second
+        var wav = Data()
+        func append32(_ value: UInt32) { withUnsafeBytes(of: value.littleEndian) { wav.append(contentsOf: $0) } }
+        func append16(_ value: UInt16) { withUnsafeBytes(of: value.littleEndian) { wav.append(contentsOf: $0) } }
+        wav.append(contentsOf: Array("RIFF".utf8)); append32(UInt32(36 + byteCount))
+        wav.append(contentsOf: Array("WAVE".utf8))
+        wav.append(contentsOf: Array("fmt ".utf8)); append32(16); append16(1)
+        append16(UInt16(channels)); append32(UInt32(sampleRate))
+        append32(UInt32(sampleRate * channels * bitsPerSample / 8))
+        append16(UInt16(channels * bitsPerSample / 8)); append16(UInt16(bitsPerSample))
+        wav.append(contentsOf: Array("data".utf8)); append32(UInt32(byteCount))
+        wav.append(Data(count: byteCount))
+
+        try wav.write(to: directory.appendingPathComponent("001.mp3"))
+        return directory
+    }
+
+    private func waitUntil(timeout: TimeInterval = 10, _ condition: () -> Bool) async {
+        let deadline = Date().addingTimeInterval(timeout)
+        while !condition(), Date() < deadline {
+            try? await Task.sleep(nanoseconds: 20_000_000)
+        }
+    }
+
+    /// The core exclusivity guarantee across an asynchronous load: player A taps play and starts
+    /// loading, player B takes the slot while A is still `.loading`, and A's item then becomes
+    /// ready. A must honour the hand-over and settle at `.ready` instead of firing its pending
+    /// auto-start, which would re-register A and silently pause B — overriding the user's *later*
+    /// choice. `pause()` cannot deliver this on its own: it no-ops unless the player is already
+    /// `.playing`, and A is `.loading` with no AVPlayer at hand-over time, so the outgoing player
+    /// sails straight past it. Only cancelling the deferred start does.
+    @Test func registeringNewPlayerCancelsPendingAutoStartOfLoadingPlayer() async throws {
+        let directory = try makeSilentAudioDirectory()
+        defer { try? FileManager.default.removeItem(at: directory) }
+
+        let loading = QuranPlayerViewModel(baseURL: directory, chapterNumber: 1, chapterName: "test")
+        loading.play()
+        #expect(QuranPlayerCoordinator.shared.activePlayer === loading)
+        #expect(loading.playbackState == .loading)
+
+        // `second` must be held in a local: a temporary would deallocate and hand the slot back
+        // through the weak reference, passing for the wrong reason.
+        let second = configuredPlayer(chapter: 3)
+        QuranPlayerCoordinator.shared.registerActivePlayer(second)
+        #expect(QuranPlayerCoordinator.shared.activePlayer === second)
+
+        await waitUntil { loading.playbackState != .loading }
+
+        #expect(loading.playbackState == .ready)
+        #expect(QuranPlayerCoordinator.shared.activePlayer === second)
+    }
 }
