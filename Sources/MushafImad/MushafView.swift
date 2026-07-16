@@ -250,9 +250,12 @@ public struct MushafView: View {
             guard let verse = RealmService.shared.getVerse(
                 chapterNumber: chapterNumber, verseNumber: max(verseNumber, 1)) else { return }
             playingVerse = isOpeningBaismala ? nil : verse
-            if let page = verse.page1441?.number, page != viewModel.scrollPosition {
-                withAnimation { viewModel.scrollPosition = page }
-            }
+            withAnimation { viewModel.followVerse(verse) }
+        }
+        // A host that drives playback owns its own player and highlights through this binding,
+        // so this is the path that carries recitation into the reader.
+        .onChange(of: highlightedVerseBinding?.wrappedValue?.page1441?.number) { _, _ in
+            withAnimation { viewModel.followVerse(highlightedVerseBinding?.wrappedValue) }
         }
     }
     // MARK: - Verse Action Bar
