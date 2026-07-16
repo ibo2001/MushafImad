@@ -1,0 +1,23 @@
+Tests/MushafImadSPMTests/GazeToVerseMapperTests.swift
+  s_e099777c255c7e::t_70b04bfd95f3ae 4
+Tests/MushafImadSPMTests/ReadingProgressTrackerTests.swift
+  s_e099777c255c7e::t_0f67b655b862de 24-28
+  s_e099777c255c7e::t_e1a6db54fc1800 4
+  s_e099777c255c7e::t_ada41c5e8a6053 596,609
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a5b1562b46d17da329e2a9ef5053df4195783d63",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
