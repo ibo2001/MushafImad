@@ -1,0 +1,19 @@
+Sources/MushafImad/AudioPlayer/Services/BackgroundPlaybackHelper.swift
+  s_e099777c255c7e::t_fdcbc182edf255 41-44,48-50
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "07838ea55034bb96e852af84653f665ce2618ec5",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
