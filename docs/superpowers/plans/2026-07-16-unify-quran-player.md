@@ -640,7 +640,7 @@ git commit -m "docs: record manual verification of the unified player"
 
 ## Done when
 
-- All 17 `QuranPlayerCoordinatorTests` pass, and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass.
+- All 18 `QuranPlayerCoordinatorTests` pass (9 pre-existing + 9 new), and `MushafViewFollowVerseTests` / `ReciterDataProviderTests` still pass.
 - The Example app builds and runs.
 - The four manual checks in Task 5 are recorded with honest results.
 - Only the 11 pre-existing eye-tracking failures remain in the suite.
