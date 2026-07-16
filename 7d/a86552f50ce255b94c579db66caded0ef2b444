@@ -1,0 +1,22 @@
+Sources/MushafImad/AudioPlayer/ViewModels/QuranPlayerViewModel.swift
+  s_e099777c255c7e::t_9f82b6ed2d9b3e 322-323
+  s_e099777c255c7e::t_1d60e6aca1f3e1 176
+  s_e099777c255c7e::t_9b7b2c09aa2138 287-293
+  s_e099777c255c7e::t_bfb836e25eb31d 35-42
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "7da86552f50ce255b94c579db66caded0ef2b444",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
