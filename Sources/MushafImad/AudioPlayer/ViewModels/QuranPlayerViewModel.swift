@@ -325,6 +325,15 @@ public final class QuranPlayerViewModel: ObservableObject {
     }
 
     public func play() {
+        // Validate before seizing the slot. Registration pauses whoever is currently audible,
+        // so a player that cannot possibly play must not get that far: it would silence real
+        // playback, point the lock screen at itself, and only fail later and asynchronously in
+        // resolveAudioURLForPlayback(). `startIfNeeded` already guards this way.
+        guard hasValidConfiguration else {
+            playbackState = .failed(String(localized: "Audio playback is not configured."))
+            return
+        }
+
         becomeActivePlayer()
 
         guard let player else {
