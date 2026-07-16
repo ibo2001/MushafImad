@@ -542,11 +542,13 @@ If the compiler reports `reciterService` used somewhere this plan did not antici
 
 In the same modifier chain, immediately above the existing `.onChange(of: highlightedVerseBinding?.wrappedValue?.page1441?.number)` handler, add:
 
+**Correction (applied after review).** The guard below originally tested `highlightedVerseBinding == nil` alone. That was wrong: `MushafView`'s *static* init (`MushafView(highlightedVerse: someVerse)`) leaves the binding nil, so the guard passed for a host that had supplied its own verse — playback overrode it and popped it back at every basmala. Both ownership forms must be excluded. The handler body also had to be extracted into a private `followNowPlaying(_:)` and seeded from the `.task` *after* `initializePageView`, which sets `scrollPosition` unconditionally and would otherwise clobber the seed.
+
 ```swift
-        // Only follow playback when the host has not taken ownership of the highlight;
-        // a host-supplied binding stays authoritative exactly as before.
+        // Follow playback only when the host owns no highlight of its own — neither a binding
+        // nor a static verse. Both stay authoritative exactly as before.
         .onChange(of: playerCoordinator.nowPlaying) { _, nowPlaying in
-            guard highlightedVerseBinding == nil else { return }
+            guard highlightedVerseBinding == nil, staticHighlightedVerse == nil else { return }
             guard let nowPlaying else { playingVerse = nil; return }
             let isOpeningBasmala = nowPlaying.verseNumber < 1
             guard let verse = RealmService.shared.getVerse(
