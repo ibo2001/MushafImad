@@ -50,7 +50,14 @@ offers only tafsir and close. This is why defect #1's page-following had to be r
 ## Constraints
 
 - **Additive only.** Tagged 1.0.4 and the README documents `QuranPlayerViewModel` as public API.
-  Existing host code that constructs its own player must keep compiling and working. Ships 1.1.0.
+  Existing host code that constructs its own player must keep compiling and working.
+- **Ships 2.0.0, not 1.1.0.** The Swift API really is additive, but this branch also moves
+  realm-swift from 10.49 to 20.0 to unblock the build, and SwiftPM resolution is part of a
+  library's contract: a host that also depends on realm-swift 10.x cannot resolve this release at
+  all, and one that can must migrate its own Realm code across ten major versions. For a Quran app
+  — likely to have its own Realm — that is a breaking change regardless of what the Swift symbols
+  say. The README (`:130`) still says `from: "1.0.4"` and names no Realm requirement; release notes
+  must lead with it.
 - The Example app is the only known consumer, but the API stays conservative regardless.
 - The documented contract "apps may call `LockScreenMetadataManager.shared.setupRemoteCommands`
   at launch to replace the defaults" must survive.
@@ -265,7 +272,24 @@ construct in tests.
 
 ## Migration notes
 
-None required. Every change is additive or internal:
+### Required before tagging: the Realm file-format upgrade
+
+`RealmService.initialize()` copies the bundled `quran.realm` into Application Support **only if it
+does not already exist**, then opens it read-write. An existing 1.0.4 install therefore holds a file
+written by realm-core 14, and core 20 will attempt an in-place format upgrade on first open.
+
+If that upgrade throws, `initialize()` throws — and this branch's swallow-and-return-nil handlers
+turn the failure into a **silently empty reader** rather than a visible error. Every existing user
+would hit it at once, and it would present as a blank Mushaf rather than a crash or a message.
+
+The simulator verification was a fresh install, so it proves the bundled file opens under core 20
+and nothing about the upgrade path. **Install a 1.0.4 build, then this build over it, and confirm
+the reader still loads.** Consider a fallback that re-copies from the bundle if
+`Realm(configuration:)` throws — the file is a read-only bundled asset, so re-copying loses nothing.
+
+### Swift API
+
+None required. Every Swift-level change is additive or internal:
 
 - Hosts that construct their own player keep working and now get correct remote commands and
   automatic registration for free.

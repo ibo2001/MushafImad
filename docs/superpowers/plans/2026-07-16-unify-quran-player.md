@@ -12,7 +12,8 @@
 
 ## Global Constraints
 
-- **Additive only.** No existing public symbol may be removed or have its signature changed. Library is tagged 1.0.4; this ships as 1.1.0.
+- **Additive only.** No existing public symbol may be removed or have its signature changed. Library is tagged 1.0.4.
+- **Ships 2.0.0, not 1.1.0** (decided after the final review). The Swift API is additive, but the branch moves realm-swift 10.49 -> 20.0, and SwiftPM resolution is part of the contract: a host on realm-swift 10.x cannot resolve this release at all. Release notes must lead with the Realm requirement; the README still says `from: "1.0.4"` and names no Realm version.
 - `QuranPlayerCoordinator`, `QuranPlayerViewModel`, `BackgroundPlaybackHelper`, `LockScreenMetadataManager` are all `@MainActor`. Tests touching them must be `@MainActor`.
 - The contract "apps may call `LockScreenMetadataManager.shared.setupRemoteCommands(...)` at launch to replace the defaults" must keep working. Do not remove the `hasRegisteredCommands()` check.
 - Do **not** reinstate end-of-surah auto-advance (see spec, "What removing MushafView's player deletes").
