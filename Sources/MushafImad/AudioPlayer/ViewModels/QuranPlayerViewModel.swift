@@ -173,7 +173,6 @@ public final class QuranPlayerViewModel: ObservableObject {
             return
         }
 
-        becomeActivePlayer()
         ensureBackgroundSupport()
 
         switch playbackState {
@@ -286,9 +285,16 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     /// A player that starts playing becomes the active one. Doing this here rather than in a
     /// view means a host cannot forget to register (which is how VerseByVerseDemo's remote
-    /// commands went dead).
+    /// commands went dead). Also republishes the current verse: registration alone clears the
+    /// coordinator's projection, and if this player's verse hasn't changed since it last held
+    /// the slot, `currentVerseNumber`'s didSet won't fire to refill it — leaving the highlight
+    /// blank while audio keeps playing. `playerDidUpdateVerse` is a pure projection write, so
+    /// this push is safe even when it is a no-op (already-active, unchanged verse).
     private func becomeActivePlayer() {
         QuranPlayerCoordinator.shared.registerActivePlayer(self)
+        QuranPlayerCoordinator.shared.playerDidUpdateVerse(
+            self, chapter: chapterNumber, verse: currentVerseNumber
+        )
     }
 
     private func ensureBackgroundSupport() {

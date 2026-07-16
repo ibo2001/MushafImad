@@ -201,4 +201,82 @@ struct QuranPlayerCoordinatorTests {
         #expect(QuranPlayerCoordinator.shared.activePlayer === player)
         #expect(QuranPlayerCoordinator.shared.nowPlaying?.verseNumber == 5)
     }
+
+    // MARK: - QuranPlayerViewModel wiring (didSet -> coordinator)
+
+    /// setPreviewVerse is the public, side-effect-free way to move currentVerseNumber. This
+    /// exercises the production didSet hook end-to-end, not the coordinator API directly.
+    @Test func setPreviewVerseOnActivePlayerPublishesNowPlaying() {
+        let player = configuredPlayer(chapter: 2)
+        QuranPlayerCoordinator.shared.registerActivePlayer(player)
+
+        player.setPreviewVerse(5)
+
+        #expect(QuranPlayerCoordinator.shared.nowPlaying
+                == QuranPlayerCoordinator.NowPlaying(chapterNumber: 2, verseNumber: 5))
+    }
+
+    /// stop() assigns currentVerseNumber = nil, which must clear the projection through the
+    /// same didSet path used for real verse changes.
+    @Test func stopOnActivePlayerClearsNowPlaying() {
+        let player = configuredPlayer(chapter: 2)
+        QuranPlayerCoordinator.shared.registerActivePlayer(player)
+        player.setPreviewVerse(5)
+        #expect(QuranPlayerCoordinator.shared.nowPlaying != nil)
+
+        player.stop()
+
+        #expect(QuranPlayerCoordinator.shared.nowPlaying == nil)
+    }
+
+    /// A player that never became active must not be able to move the highlight, even though
+    /// its own currentVerseNumber's didSet still fires locally.
+    @Test func setPreviewVerseOnInactivePlayerDoesNotDisturbActiveProjection() {
+        let active = configuredPlayer(chapter: 2)
+        let bystander = configuredPlayer(chapter: 3)
+        QuranPlayerCoordinator.shared.registerActivePlayer(active)
+        active.setPreviewVerse(5)
+
+        bystander.setPreviewVerse(99)
+
+        #expect(QuranPlayerCoordinator.shared.nowPlaying
+                == QuranPlayerCoordinator.NowPlaying(chapterNumber: 2, verseNumber: 5))
+    }
+
+    /// Regression test for the resume-gap bug: player A is mid-verse, loses the active slot to
+    /// player B (which clears the projection), then regains the slot via play(). Without a
+    /// republish inside becomeActivePlayer(), A's currentVerseNumber is unchanged so the
+    /// didSet never fires, and the highlight stays blank until the verse advances. play() is
+    /// used (not registerActivePlayer directly) because the republish lives in the view
+    /// model's private becomeActivePlayer(), which play() invokes synchronously before it ever
+    /// touches an AVPlayer.
+    @Test func regainingActiveSlotRepublishesCurrentVerse() {
+        let first = configuredPlayer(chapter: 2)
+        QuranPlayerCoordinator.shared.registerActivePlayer(first)
+        first.setPreviewVerse(5)
+        #expect(QuranPlayerCoordinator.shared.nowPlaying?.verseNumber == 5)
+
+        let second = configuredPlayer(chapter: 3)
+        QuranPlayerCoordinator.shared.registerActivePlayer(second)
+        #expect(QuranPlayerCoordinator.shared.nowPlaying == nil)
+
+        first.play()
+
+        #expect(QuranPlayerCoordinator.shared.activePlayer === first)
+        #expect(QuranPlayerCoordinator.shared.nowPlaying
+                == QuranPlayerCoordinator.NowPlaying(chapterNumber: 2, verseNumber: 5))
+    }
+
+    /// Regression test for the silent-steal bug: a player that merely appears (autoPlay: false,
+    /// e.g. seekToVerse queuing a seek before the AVPlayer exists) must not seize the active
+    /// slot and pause whoever is actually playing.
+    @Test func startIfNeededWithoutAutoPlayDoesNotStealActiveSlot() {
+        let activePlayer = configuredPlayer(chapter: 2)
+        QuranPlayerCoordinator.shared.registerActivePlayer(activePlayer)
+
+        let appearing = configuredPlayer(chapter: 3)
+        appearing.startIfNeeded(autoPlay: false)
+
+        #expect(QuranPlayerCoordinator.shared.activePlayer === activePlayer)
+    }
 }
