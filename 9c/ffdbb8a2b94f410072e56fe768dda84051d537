@@ -1,0 +1,28 @@
+Sources/MushafImad/MushafTextView.swift
+  s_e099777c255c7e::t_94943a020b056c 107
+Sources/MushafImad/Core/Models/SurahVerseCounts.swift
+  s_e099777c255c7e::t_88fa707cee3b02 1-29
+Sources/MushafImad/Core/Services/TafseerService.swift
+  s_e099777c255c7e::t_9f01e0218058c8 64
+  s_e099777c255c7e::t_4f33a20f2261c4 155
+  s_e099777c255c7e::t_fa4e3a62655f72 261-265
+Tests/MushafImadSPMTests/TafseerTests.swift
+  s_e099777c255c7e::t_1db0bb47da0f92 96-98
+  s_e099777c255c7e::t_55bf03c2edeac4 103-111
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "9cffdbb8a2b94f410072e56fe768dda84051d537",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
