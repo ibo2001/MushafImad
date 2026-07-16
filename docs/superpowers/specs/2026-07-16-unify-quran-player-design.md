@@ -229,12 +229,32 @@ This keeps the new capability strictly additive.
   private method so they cannot drift.
 - **Active player deallocates.** The weak ref nils; `nowPlaying` must clear, or the highlight
   pins to a corpse.
-- **Playback stops** (`.idle` / `.finished`) → clear `nowPlaying` → clear highlight, matching the
-  existing `playbackState` handler.
+- **Playback stops via `stop()`** (`.idle`) → `currentVerseNumber` goes nil → `nowPlaying` clears →
+  highlight clears.
+- **Playback reaches `.finished`** → the highlight **stays** on the last recited verse. An earlier
+  draft of this section said `.finished` should clear too, but nothing does: `currentVerseNumber`
+  retains its value, so the projection holds. That is deliberate on reflection — it matches the old
+  (dead) handler, which also only cleared on `.idle`, and leaving the reader looking at where
+  recitation ended is better than blanking it. Recorded as a decision, not an oversight.
 - **Verse not found in Realm** → leave the highlight as-is rather than clearing it.
-- `pause()` guards on `playbackState == .playing` and a non-nil `AVPlayer`
-  (`QuranPlayerViewModel.swift:329`), so pausing a not-yet-playing previous player is a safe
-  no-op.
+- **Pausing the outgoing player is not enough — it must be told to stand down.** `pause()` guards on
+  `playbackState == .playing` and a non-nil `AVPlayer`, so asking a *loading* or *paused* player to
+  pause is a **silent** no-op. An earlier draft called that "a safe no-op". The silence was the hole:
+  the outgoing player was never told to stand down, only asked to pause in a state where pausing
+  means nothing, and its pending intent then started audio after it had lost the slot.
+
+  Two paths did exactly that. A player with a `pendingResumeVerse` taps play; `seek` on a remote
+  asset is slow; another player registers and "pauses" it (no-op, it is `.paused`); the seek
+  completes and calls `playImmediately` — **two players audible**. And `observeStatus`'s
+  `if shouldAutoStart { play() }` let a slow-loading player reclaim the slot after the user had
+  already chosen another, so the *later* choice silently lost.
+
+  Hence `resignActivePlayback()` (internal): it clears the latent start-audio intents
+  (`shouldAutoStart`, `shouldResumeAfterSeek`) *and* pauses. `registerActivePlayer` calls it instead
+  of `pause()`. Every continuation that starts audio after an `await` additionally re-checks
+  `activePlayer === self`, because an intent already in flight — including an
+  `AVPlayerItemDidPlayToEndTime` notification already posted, which survives resign by hopping to
+  the MainActor — cannot be recalled by clearing a flag.
 
 ## Testing
 
@@ -294,8 +314,19 @@ None required. Every Swift-level change is additive or internal:
 - Hosts that construct their own player keep working and now get correct remote commands and
   automatic registration for free.
 - Hosts that pass a `highlightedVerse` binding see identical behavior.
-- Hosts that call `registerActivePlayer` manually keep working; it becomes redundant but
-  harmless (guarded against self-pause).
+- Hosts that call `registerActivePlayer` manually keep working, but it is **not** harmless — an
+  earlier draft claimed it was, and the counterexample was in-tree. `PlayerViewUI` paired an
+  `onAppear` register with an `onDisappear` unregister. `onDisappear` fires on a `TabView` tab
+  switch while the `@StateObject` player keeps playing, so the slot was vacated *while audio was
+  audible*: the late-bound remote handlers then resolved to nil and went dead, `MenuBarPlayerView`
+  read "No audio playing", and `MushafView` cleared its highlight mid-recitation. Late binding fixed
+  "the first player owns the lock screen forever" and, on this path, replaced it with "the slot can
+  be empty while something plays."
+
+  The lesson generalizes: **registration must track playback, not view visibility.** `play()`
+  self-registers and the weak reference self-cleans on dealloc, so `PlayerViewUI`'s manual calls
+  were removed rather than kept. A host that still calls `registerActivePlayer` itself works, but
+  it must not tie `unregisterActivePlayer` to `onDisappear`.
 - `MushafView` with no binding gains recitation-following — the only intended behavior change,
   and it is the reported defect.
 
