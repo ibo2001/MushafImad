@@ -1,0 +1,22 @@
+Tests/MushafImadSPMTests/QuranPlayerCoordinatorTests.swift
+  s_e099777c255c7e::t_1dc0242bfae1b2 93-203
+  s_e099777c255c7e::t_04261f7b012124 7
+Sources/MushafImad/AudioPlayer/Services/QuranPlayerCoordinator.swift
+  s_e099777c255c7e::t_d55d6d834f41a8 16-28,34-35,45-50,54,56,58,60,69-80
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "a1cae381f8138101a8b10cee3bbceb76d5177f0b",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
