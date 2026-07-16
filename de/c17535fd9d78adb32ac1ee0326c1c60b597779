@@ -1,0 +1,19 @@
+docs/superpowers/plans/2026-07-16-unify-quran-player.md
+  s_e099777c255c7e::t_4af290504a04de 643
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "dec17535fd9d78adb32ac1ee0326c1c60b597779",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
