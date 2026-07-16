@@ -186,12 +186,26 @@ Today the chain is `playingVerse ?? highlightedVerseBinding ?? staticHighlighted
 (`MushafView.swift:337-339`), and `playingVerse` is always nil, so the binding always wins.
 
 Letting coordinator-driven `playingVerse` keep first place would start overriding hosts that
-pass a binding — a silent behavior change. Instead the new path is scoped:
+supply their own highlight — a silent behavior change. Instead the new path is scoped by asking
+whether the host owns the highlight at all. `MushafView` has two mutually exclusive inits, and
+**both** forms of ownership must be respected:
 
 - **Host passed a `highlightedVerse` binding** → the binding wins, exactly as today.
   `VerseByVerseDemo` is unchanged; zero regression risk.
-- **No binding** → the coordinator drives following. `MushafReaderDemo` ("Read the Mushaf")
-  gains automatic recitation-following.
+- **Host passed a static `highlightedVerse: Verse?`** → that verse wins, exactly as today.
+- **Host passed no highlight at all** (`MushafView()` / `MushafView(initialPage:)`, which reach
+  the static init with `highlightedVerse` defaulting to `nil`) → the coordinator drives
+  following. `MushafReaderDemo` ("Read the Mushaf") gains automatic recitation-following.
+
+So the guard is `highlightedVerseBinding == nil && staticHighlightedVerse == nil`, not the
+binding alone.
+
+An earlier draft of this section named only the binding case, and the plan turned that into a
+`guard highlightedVerseBinding == nil` — which passes for the static init, since that init leaves
+the binding nil. A static-highlight host would then have had its verse overridden during playback
+and popped back at every basmala (`playingVerse` returns to nil there, and `staticHighlightedVerse`
+is a `let` that can never be cleared). That is precisely the breakage the additive-only constraint
+exists to prevent, and the enumeration above is what closes it.
 
 This keeps the new capability strictly additive.
 
@@ -202,6 +216,10 @@ This keeps the new capability strictly additive.
 - **Stale push.** `playerDidUpdateVerse` ignores any player that is not `_activePlayer`, so a
   late tick from the outgoing player cannot move the highlight.
 - **Basmala (verse 0)** keeps current semantics: navigate to it, do not highlight it.
+- **Reader opened while playback is already running.** `.onChange` fires only on transitions, so
+  the handler must also be seeded on appear — otherwise the most common path (start playback,
+  navigate to the reader) shows no highlight until the next verse boundary. Both call the same
+  private method so they cannot drift.
 - **Active player deallocates.** The weak ref nils; `nowPlaying` must clear, or the highlight
   pins to a corpse.
 - **Playback stops** (`.idle` / `.finished`) → clear `nowPlaying` → clear highlight, matching the
