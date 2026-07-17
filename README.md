@@ -37,7 +37,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 - **📱 Rich Mushaf View** – `MushafView` renders all 604 pages with selectable verses, RTL paging, and theming via `ReadingTheme`.
 - **💾 Realm-backed data** – Bundled `quran.realm` database powers fast, offline access to chapters, verses, parts (juz'), hizb metadata, and headers.
 - **⚡ Aggressive caching** – `ChaptersDataCache`, `QuranDataCacheService`, and `QuranImageProvider` keep Realm objects and page images warm for smooth scrolling.
-- **🎵 Integrated audio playback** – `QuranPlayerViewModel` coordinates `AVPlayer`, `ReciterService`, and `AyahTimingService` to sync highlighting with audio recitation.
+- **🎵 Integrated audio playback** – `QuranPlayerViewModel` coordinates `AVPlayer`, `ReciterService`, and `AyahTimingService` to sync highlighting with audio recitation. `QuranPlayerCoordinator` keeps playback exclusive and drives the lock screen.
 - **🧩 Reusable UI components** – Toasts, hizb progress indicators, loading views, and sheet headers are available in `Sources/Components`.
 - **📦 Example app** – The `Example` target demonstrates embedding `MushafView` on both iOS and macOS with very little wiring.
 
@@ -57,6 +57,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
   - `QuranImageProvider` loads line images from the bundle with memory caching.
 - `Sources/AudioPlayer`
   - `ViewModels/QuranPlayerViewModel` bridges `AVPlayer` with verse timing for audio playback.
+  - `Services/QuranPlayerCoordinator` is the single source of truth for the active player and the currently recited verse.
   - `Services/AyahTimingService` loads JSON timing data; `ReciterService` and `ReciterDataProvider` expose available reciters; `ReciterPickerView` renders selection UI.
   - `Views/QuranPlayer` and supporting SwiftUI components power the player sheet.
 - `Sources/Components` – Shared SwiftUI building blocks, including `FloatingToastView`, `ToastOverlayView`, loading/UI chrome, and progress displays.
@@ -127,10 +128,14 @@ If your app already has a `ModelContainer`, simply add `ReadingSession.self` to 
 1. **Add the dependency**
 
    ```swift
-   .package(url: "https://github.com/ibo2001/MushafImad", from: "1.0.4")
+   .package(url: "https://github.com/ibo2001/MushafImad", from: "2.0.0")
    ```
 
    Then add `MushafImad` to your target dependencies.
+
+   > **Upgrading from 1.x?** 2.0.0 requires **realm-swift 20.x** (1.x used 10.x). The Swift API is
+   > additive — no symbol was removed — but SwiftPM cannot resolve 2.0.0 alongside a host app that
+   > pins realm-swift 10.x, so you must bump realm-swift too. See [Migrating to 2.0.0](#migrating-to-200).
 
 2. **Bootstrap infrastructure early**
 
@@ -188,6 +193,40 @@ struct ReaderContainer: View {
     }
 }
 ```
+
+### Audio Playback
+
+`QuranPlayerCoordinator.shared` is the single source of truth for what is currently playing. Players
+register themselves when playback starts — hosts never register a player by hand.
+
+Read `nowPlaying` to follow recitation from your own UI:
+
+```swift
+struct RecitationLabel: View {
+    @ObservedObject private var coordinator = QuranPlayerCoordinator.shared
+
+    var body: some View {
+        if let nowPlaying = coordinator.nowPlaying {
+            Text("\(nowPlaying.chapterNumber):\(nowPlaying.verseNumber)")
+        }
+    }
+}
+```
+
+`NowPlaying` carries `chapterNumber` and `verseNumber`. A `verseNumber` of `0` is the opening
+basmala, not verse 1. `nowPlaying` is `nil` when nothing is playing.
+
+Two behaviors are worth knowing:
+
+- **Playback is exclusive.** Starting a second player pauses the first — the coordinator holds one
+  active player, and the outgoing one stands down.
+- **Lock-screen and Control Center commands follow the active player.** They bind at invocation
+  time, so they keep working across a player swap rather than staying pointed at the first player
+  that ever played.
+
+`MushafView` follows recitation automatically **only when you supply no highlight of your own**. If
+you pass a `highlightedVerse` binding or a static `highlightedVerse`, your value wins and playback
+never overrides it — see [Migrating to 2.0.0](#migrating-to-200).
 
 ### Advanced: Custom Page Layouts
 
@@ -339,8 +378,55 @@ import AppKit
 
 ### Package Testing
 - Run `swift build` to verify compilation on macOS.
-- Run unit tests with `swift test` (tests are currently scaffolding; add coverage as new features land).
+- Run unit tests with `swift test`. Run them **serially** — parallel execution is flaky here (suites share singletons) and silently covers less.
 - Test on both Intel and Apple Silicon Macs for architecture compatibility.
+
+## Migrating to 2.0.0
+
+**The Swift API is additive.** No public symbol was removed or changed signature. The major bump is
+about the dependency and one behavior change.
+
+### 1. Bump realm-swift to 20.x (required)
+
+2.0.0 depends on `realm-swift` 20.x. realm-swift pins realm-core exactly, and realm-core below 20.1.5
+no longer compiles against current libc++ (it specializes `std::is_pod`, which the standard library
+now rejects). There is no workaround from the host side — a package-level dependency cannot be
+patched by build flags — so 1.x is effectively unbuildable on current toolchains and this upgrade is
+the fix.
+
+If your app pins realm-swift 10.x, SwiftPM will fail to resolve until you bump it. Realm's own
+[10 → 20 migration notes](https://github.com/realm/realm-swift/releases) cover any API changes on
+your side.
+
+**Your existing Realm data upgrades in place.** MushafImad copies the bundled `quran.realm` only when
+absent, so an app updating from 1.x opens its existing file and Realm performs a one-way file-format
+upgrade (core 14 → core 20). This is not reversible: a file opened by 2.0.0 cannot be reopened by a
+1.x build. Test the upgrade on a device carrying real 1.x data before shipping.
+
+### 2. `MushafView` now follows recitation (behavior change)
+
+`MushafView` with **no highlight of its own** now highlights the recited verse and turns to its page
+as audio plays. Previously it did nothing — this is the reported defect being fixed.
+
+```swift
+MushafView(initialPage: 1)  // now follows recitation automatically
+```
+
+Hosts that pass a highlight are **unaffected** — your value continues to win, and playback never
+overrides it:
+
+```swift
+MushafView(initialPage: 1, highlightedVerse: $myVerse)     // unchanged
+MushafView(initialPage: 1, highlightedVerse: someVerse)    // unchanged
+```
+
+If you want the old do-nothing behavior back, pass a constant binding: `highlightedVerse: .constant(nil)`.
+
+### 3. Remove any manual player registration
+
+`QuranPlayerCoordinator.registerActivePlayer(_:)` is now exclusive — it pauses the outgoing player.
+Players call it themselves when playback starts, so if your code calls it from `onAppear` (or
+anywhere else), delete that call. Registering a player that isn't playing will pause the one that is.
 
 ## Troubleshooting
 
