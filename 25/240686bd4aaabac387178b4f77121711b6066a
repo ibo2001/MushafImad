@@ -1,0 +1,26 @@
+Tests/MushafImadSPMTests/FallbackGazeEstimatorTests.swift
+  s_e099777c255c7e::t_e91e3ad04573ee 137-139
+  s_e099777c255c7e::t_7f6b8736f043ed 190-192,255-257,319-321
+Tests/MushafImadSPMTests/ReadingProgressTrackerTests.swift
+  s_e099777c255c7e::t_b7a62d03fb8c9f 635-637
+Tests/MushafImadSPMTests/ExperimentalEyeTrackingKnownIssues.swift
+  s_e099777c255c7e::t_ee8bf38bb98310 1-41
+Tests/MushafImadSPMTests/GazeToVerseMapperTests.swift
+  s_e099777c255c7e::t_b7a62d03fb8c9f 433-437,469-472,783-785
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "25240686bd4aaabac387178b4f77121711b6066a",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
