@@ -1,6 +1,7 @@
 import Foundation
 import Testing
 import CoreGraphics
+import QuartzCore
 @testable import MushafImad
 
 /// Tests for GazeToVerseMapper to ensure gaze point to verse mapping works correctly

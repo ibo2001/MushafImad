@@ -74,9 +74,8 @@ public struct MushafView: View {
     private let externalPageTapHandler: (() -> Void)?
 
     @State private var viewModel = ViewModel()
-    @StateObject private var playerViewModel = QuranPlayerViewModel()
+    @ObservedObject private var playerCoordinator = QuranPlayerCoordinator.shared
     @StateObject private var eyeTrackingCoordinator = EyeTrackingCoordinator()
-    @EnvironmentObject private var reciterService: ReciterService
     @EnvironmentObject private var toastManager: ToastManager
     @Environment(\.modelContext) private var modelContext
     @Environment(\.dismiss) private var dismiss
@@ -165,6 +164,10 @@ public struct MushafView: View {
         }
         .task {
             await viewModel.initializePageView(initialPage: initialPage)
+            // initializePageView unconditionally overwrites scrollPosition once its load
+            // completes, so seeding the now-playing verse has to happen after it finishes —
+            // seeding first would just get clobbered by that unconditional assignment.
+            followNowPlaying(playerCoordinator.nowPlaying)
         }
         .onAppear {
             if displayMode == .text {
@@ -191,34 +194,6 @@ public struct MushafView: View {
             }
             #endif
         }
-        .onChange(of: playerViewModel.playbackState) { oldState, newState in
-            // Clear highlighting when playback stops
-            switch newState {
-            case .idle:
-                playingVerse = nil
-            case .finished:
-                if !reciterService.isLoading,
-                   let reciter = reciterService.selectedReciter,
-                   let baseURL = reciter.audioBaseURL,
-                   let target = viewModel.nextChapter(from: playerViewModel.chapterNumber) {
-                    withAnimation {
-                        viewModel.navigateToChapterAndPrepareScroll(target)
-                    }
-                    playerViewModel.configureIfNeeded(
-                        baseURL: baseURL,
-                        chapterNumber: target.number,
-                        chapterName: target.displayTitle,
-                        reciterName: reciter.displayName,
-                        reciterId: reciter.id,
-                        timingSource: reciter.timingSource
-                    )
-                    playerViewModel.startIfNeeded(autoPlay: true)
-                }
-
-            default:
-                break
-            }
-        }
         .onAppear {
 #if canImport(UIKit)
             tiltManager.activate()
@@ -242,7 +217,35 @@ public struct MushafView: View {
                 eyeTrackingCoordinator.resume()
             }
         }
+        // Only follow playback when the host has not taken ownership of the highlight;
+        // a host-supplied binding or a static highlight stays authoritative exactly as before.
+        .onChange(of: playerCoordinator.nowPlaying) { _, nowPlaying in
+            followNowPlaying(nowPlaying)
+        }
+        // A host that drives playback owns its own player and highlights through this binding,
+        // so this is the path that carries recitation into the reader.
+        .onChange(of: highlightedVerseBinding?.wrappedValue?.page1441?.number) { _, _ in
+            withAnimation { viewModel.followVerse(highlightedVerseBinding?.wrappedValue) }
+        }
     }
+
+    // MARK: - Playback Following
+
+    /// Follow the coordinator's now-playing verse, unless the host owns the highlight
+    /// (via a binding or a static verse passed to the initializer). Shared by the
+    /// `.onChange` transition handler and the `.onAppear` seed so they can't drift apart.
+    private func followNowPlaying(_ nowPlaying: QuranPlayerCoordinator.NowPlaying?) {
+        guard highlightedVerseBinding == nil, staticHighlightedVerse == nil else { return }
+        guard let nowPlaying else { playingVerse = nil; return }
+        let isOpeningBasmala = nowPlaying.verseNumber < 1
+        guard let verse = RealmService.shared.getVerse(
+            chapterNumber: nowPlaying.chapterNumber,
+            verseNumber: max(nowPlaying.verseNumber, 1)
+        ) else { return }
+        playingVerse = isOpeningBasmala ? nil : verse
+        withAnimation { viewModel.followVerse(verse) }
+    }
+
     // MARK: - Verse Action Bar
 
     @ViewBuilder

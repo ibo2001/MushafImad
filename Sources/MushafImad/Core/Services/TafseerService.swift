@@ -61,7 +61,7 @@ public final class TafseerService {
 
     private let tafseerName = "jalalayn"
     private let apiURL = URL(string: "https://api.alquran.cloud/v1/quran/ar.jalalayn")!
-    private let expectedAyahCount = 6236
+    nonisolated static let expectedAyahCount = 6236
 
     private init() {}
 
@@ -152,7 +152,7 @@ public final class TafseerService {
         guard let realm else { return true }
         let count = realm.objects(TafseerEntry.self)
             .filter("tafseerName == %@", tafseerName).count
-        return count < expectedAyahCount
+        return count < Self.expectedAyahCount
     }
 
     private func performImport() async {
@@ -258,8 +258,11 @@ extension TafseerImportState {
     }
 
     var progressValue: Double {
-        if case .importing(let p) = self { return p }
-        return isLoading ? 0.0 : 1.0
+        switch self {
+        case .idle, .fetching, .failed:   return 0.0
+        case .importing(let progress):    return progress
+        case .ready:                      return 1.0
+        }
     }
 
     var localizedDescription: String {

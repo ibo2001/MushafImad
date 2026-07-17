@@ -156,6 +156,13 @@ extension MushafView {
             navigateToChapter(chapter)
             scrollPosition = chapter.startPage
         }
+
+        /// Move the reader to the page containing `verse`, so a highlight driven by playback
+        /// stays visible instead of walking off the current page.
+        public func followVerse(_ verse: Verse?) {
+            guard let page = verse?.page1441?.number else { return }
+            scrollPosition = page
+        }
         
         @MainActor
         private func schedulePageLoad(for page: Int) {

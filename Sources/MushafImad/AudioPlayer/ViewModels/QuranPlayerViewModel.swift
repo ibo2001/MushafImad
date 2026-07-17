@@ -32,7 +32,14 @@ public final class QuranPlayerViewModel: ObservableObject {
     @Published public private(set) var isBuffering: Bool = false
     @Published public private(set) var isScrubbing: Bool = false
     @Published public var isRepeatEnabled: Bool = false
-    @Published public private(set) var currentVerseNumber: Int? = nil
+    @Published public private(set) var currentVerseNumber: Int? = nil {
+        didSet {
+            guard currentVerseNumber != oldValue else { return }
+            QuranPlayerCoordinator.shared.playerDidUpdateVerse(
+                self, chapter: chapterNumber, verse: currentVerseNumber
+            )
+        }
+    }
 
     // MARK: - Public Configuration
 
@@ -276,6 +283,20 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     // MARK: - Playback Controls
 
+    /// A player that starts playing becomes the active one. Doing this here rather than in a
+    /// view means a host cannot forget to register (which is how VerseByVerseDemo's remote
+    /// commands went dead). Also republishes the current verse: registration alone clears the
+    /// coordinator's projection, and if this player's verse hasn't changed since it last held
+    /// the slot, `currentVerseNumber`'s didSet won't fire to refill it — leaving the highlight
+    /// blank while audio keeps playing. `playerDidUpdateVerse` is a pure projection write, so
+    /// this push is safe even when it is a no-op (already-active, unchanged verse).
+    private func becomeActivePlayer() {
+        QuranPlayerCoordinator.shared.registerActivePlayer(self)
+        QuranPlayerCoordinator.shared.playerDidUpdateVerse(
+            self, chapter: chapterNumber, verse: currentVerseNumber
+        )
+    }
+
     private func ensureBackgroundSupport() {
         if backgroundHelper == nil {
             let helper = BackgroundPlaybackHelper()
@@ -304,6 +325,17 @@ public final class QuranPlayerViewModel: ObservableObject {
     }
 
     public func play() {
+        // Validate before seizing the slot. Registration pauses whoever is currently audible,
+        // so a player that cannot possibly play must not get that far: it would silence real
+        // playback, point the lock screen at itself, and only fail later and asynchronously in
+        // resolveAudioURLForPlayback(). `startIfNeeded` already guards this way.
+        guard hasValidConfiguration else {
+            playbackState = .failed(String(localized: "Audio playback is not configured."))
+            return
+        }
+
+        becomeActivePlayer()
+
         guard let player else {
             preparePlayer(autoPlay: true)
             return
@@ -315,6 +347,13 @@ public final class QuranPlayerViewModel: ObservableObject {
             pendingResumeVerse = nil
             seek(to: targetSeconds) { [weak self] in
                 guard let self, let player = self.player else { return }
+                // A zero-tolerance seek on a remote asset can take seconds. Another player may
+                // have taken the slot in the meantime, so re-check before making noise —
+                // otherwise both would be audible.
+                guard QuranPlayerCoordinator.shared.activePlayer === self else {
+                    self.playbackState = .paused
+                    return
+                }
                 player.playImmediately(atRate: self.playbackRate)
                 self.playbackState = .playing
             }
@@ -329,6 +368,23 @@ public final class QuranPlayerViewModel: ObservableObject {
         guard let player, playbackState == .playing else { return }
         player.pause()
         playbackState = .paused
+    }
+
+    /// Tell an outgoing player to stand down, called by the coordinator when another player
+    /// takes the active slot. `pause()` alone is not enough: it no-ops unless the player is
+    /// already `.playing`, so a player that is still loading or seeking sails straight past it
+    /// and starts audio *after* it has lost the slot. Cancelling the deferred-start intents is
+    /// what actually stops that.
+    ///
+    /// `pendingResumeVerse` is deliberately left alone: it is a user-visible position (set by
+    /// `setPreviewVerse` from the long-press flow and paired with `currentVerseNumber`), not an
+    /// instruction to start audio. Clearing it would strand the highlight on a verse the next
+    /// `play()` no longer resumes from. The seek continuation in `play()` re-checks the slot
+    /// instead, which is where the actual audio start happens.
+    func resignActivePlayback() {
+        shouldAutoStart = false
+        shouldResumeAfterSeek = false
+        pause()
     }
 
     public func cyclePlaybackRate() {
@@ -346,7 +402,7 @@ public final class QuranPlayerViewModel: ObservableObject {
     /// Seek to a specific verse within the current chapter using timing data
     @discardableResult
     public func seekToVerse(_ verseNumber: Int) -> Bool {
-        guard verseNumber > 0, chapterNumber > 0, reciterId > 0 else { return false }
+        guard verseNumber >= 0, chapterNumber > 0, reciterId > 0 else { return false }
         guard let timing = AyahTimingService.shared.getTiming(
             for: reciterId,
             surahId: chapterNumber,
@@ -368,7 +424,11 @@ public final class QuranPlayerViewModel: ObservableObject {
             guard let self else { return }
             // Ensure highlight updates even when paused
             self.updateCurrentVerse()
-            if shouldResume { self.play() }
+            // `shouldResume` is captured, so `resignActivePlayback()` cannot cancel it. Re-check
+            // the slot here instead: this player paused itself to seek, so a player that took
+            // over meanwhile would be silently paused again by the play() below.
+            guard shouldResume, QuranPlayerCoordinator.shared.activePlayer === self else { return }
+            self.play()
         }
         return true
     }
@@ -427,7 +487,7 @@ public final class QuranPlayerViewModel: ObservableObject {
 
     // Preview a verse when paused: update highlight and defer seek to play()
     public func setPreviewVerse(_ verseNumber: Int) {
-        guard verseNumber > 0 else { return }
+        guard verseNumber >= 0 else { return }
         currentVerseNumber = verseNumber
         pendingResumeVerse = verseNumber
     }
@@ -612,9 +672,17 @@ public final class QuranPlayerViewModel: ObservableObject {
             Task { @MainActor [weak self] in
                 guard let self else { return }
 
+                // `resignActivePlayback()` only prevents a *future* EOF by pausing before one is
+                // reached. It cannot reach into an EOF that has already been posted: this
+                // notification handler hops onto the MainActor via `Task`, so the enqueued turn
+                // can run *after* another player has registered and paused this one. If repeat
+                // is on, `play()` below would then call `becomeActivePlayer()` and silently steal
+                // the slot back from whoever just took it. Re-check ownership before restarting,
+                // same as the seek continuations in `play()`/`seekToVerse(_:)`.
                 if self.isRepeatEnabled {
                     self.seek(to: 0) { [weak self] in
-                        self?.play()
+                        guard let self, QuranPlayerCoordinator.shared.activePlayer === self else { return }
+                        self.play()
                     }
                 } else {
                     self.playbackState = .finished

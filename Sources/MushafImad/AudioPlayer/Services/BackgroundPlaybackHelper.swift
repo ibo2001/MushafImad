@@ -26,10 +26,16 @@ public final class BackgroundPlaybackHelper {
     playerViewModel = player
 
     // ensure session + interruption handling
+    // Resolve the player when the interruption fires, not when it is attached, mirroring the
+    // remote-command handlers below. `setupInterruptionHandling` replaces the previous observer
+    // on every call (last-attach-wins), so a captured player here would let whichever player last
+    // called `startIfNeeded` (the only path that reaches `attach`) own interruption resume even
+    // after another player has taken the active slot — resuming the wrong, silenced player after
+    // a phone call.
     Task { @MainActor in
       AudioSessionManager.shared.setupInterruptionHandling(
-        onInterruptionBegan: { [weak player] in player?.pause() },
-        onInterruptionEnded: { [weak player] in player?.startIfNeeded(autoPlay: true) }
+        onInterruptionBegan: { QuranPlayerCoordinator.shared.activePlayer?.pause() },
+        onInterruptionEnded: { QuranPlayerCoordinator.shared.activePlayer?.startIfNeeded(autoPlay: true) }
       )
     }
 
@@ -38,12 +44,16 @@ public final class BackgroundPlaybackHelper {
     // `LockScreenMetadataManager.shared.setupRemoteCommands(...)` at launch to
     // replace these defaults (for example, to register skip ±10s instead of
     // next/previous).
+    // Resolve the player when the command fires, not when it is registered. These handlers
+    // outlive any single player: the first attach wins the registration guard above and
+    // detach() cannot clear MPRemoteCommandCenter, so a captured player would strand the
+    // lock screen on a dead reference.
     if !LockScreenMetadataManager.shared.hasRegisteredCommands() {
       LockScreenMetadataManager.shared.setupRemoteCommands(
         .init(
-          onPlayPause: { [weak player] in player?.togglePlayback() },
-          onSkipForward: { [weak player] in _ = player?.seekToNextVerse() },
-          onSkipBackward: { [weak player] in _ = player?.seekToPreviousVerse() }
+          onPlayPause: { QuranPlayerCoordinator.shared.activePlayer?.togglePlayback() },
+          onSkipForward: { _ = QuranPlayerCoordinator.shared.activePlayer?.seekToNextVerse() },
+          onSkipBackward: { _ = QuranPlayerCoordinator.shared.activePlayer?.seekToPreviousVerse() }
         )
       )
     }

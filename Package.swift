@@ -17,7 +17,7 @@ let package = Package(
         ),
     ],
     dependencies: [
-        .package(url: "https://github.com/realm/realm-swift.git", from: "10.49.0")
+        .package(url: "https://github.com/realm/realm-swift.git", from: "20.0.0")
     ],
     targets: [
         // Targets are the basic building blocks of a package, defining a module or a test suite.

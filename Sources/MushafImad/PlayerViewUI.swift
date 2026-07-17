@@ -71,12 +71,21 @@ public struct PlayerViewUI: View {
                 .padding()
             }
         }
-        .onAppear {
-            QuranPlayerCoordinator.shared.registerActivePlayer(playerViewModel)
-        }
-        .onDisappear {
-            QuranPlayerCoordinator.shared.unregisterActivePlayer(playerViewModel)
-        }
+        // Deliberately no register/unregister here. `onAppear`/`onDisappear` track visibility,
+        // not ownership of audio: a tab switch or a push on top of this view fires
+        // `onDisappear` while the `@StateObject` player survives and keeps playing. Vacating
+        // the slot there would kill the lock-screen handlers, the menu-bar surface and the
+        // reader's highlight mid-recitation. The manual register call that used to live on
+        // `.onAppear` was removed as redundant, not as the fix for a seizure: `QuranPlayer`
+        // above is rendered with its default `autoStart: true`, so its own `.task` already calls
+        // `startIfNeeded(autoPlay: true)` → `play()` → `becomeActivePlayer()`, which registers
+        // (and pauses whoever was previously active) regardless of what this view does. What the
+        // removal did fix: the old `.onAppear` sat on the outer `Group`, so it fired in the
+        // "Loading reciters…" branch too, registering a player that had not been configured yet.
+        // `play()` self-registers and the coordinator's weak reference self-cleans on dealloc,
+        // so ownership follows audio rather than visibility — the point of removing the
+        // duplicate call here was to stop double-registering, not to stop this view from taking
+        // over playback when it appears.
     }
 
     // MARK: - Private Helpers
