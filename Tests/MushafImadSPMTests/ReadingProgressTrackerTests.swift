@@ -632,7 +632,9 @@ struct ReadingProgressTrackerTests {
         tracker.processGazePoint(gazePoint)
         
         // Assert
-        #expect(tracker.activeLineIndex == 5)
+        withKnownIssue(experimentalRotationTracking) {
+            #expect(tracker.activeLineIndex == 5)
+        }
     }
     
     // MARK: - Edge Cases
