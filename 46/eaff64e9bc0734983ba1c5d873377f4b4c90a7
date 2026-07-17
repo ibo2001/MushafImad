@@ -1,0 +1,21 @@
+Sources/MushafImad/Core/Models/Chapter.swift
+  s_e099777c255c7e::t_73c2b8ebad1be1 75-77
+Sources/MushafImad/Components/TafseerView.swift
+  s_e099777c255c7e::t_4595547abcb478 56
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.14",
+  "base_commit_sha": "46eaff64e9bc0734983ba1c5d873377f4b4c90a7",
+  "prompts": {},
+  "sessions": {
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
