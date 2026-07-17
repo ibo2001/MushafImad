@@ -84,7 +84,19 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 
 ## Using the Package
 
-### SwiftData Model Container Setup (Required for Eye Tracking)
+### Eye Tracking (Experimental)
+
+> [!WARNING]
+> **Eye tracking is experimental and not recommended for production.** Its gaze estimation and
+> geometry maths are incomplete: the fallback estimator's gaze does not advance down the page over
+> time, gaze-to-verse mapping does not resolve in landscape or after an orientation change, and line
+> tracking does not recover after a rotation. The corresponding tests are marked as known issues
+> (see `Tests/MushafImadSPMTests/ExperimentalEyeTrackingKnownIssues.swift`).
+>
+> The feature is opt-in and self-contained — nothing else in the package depends on it, and the
+> Mushaf reader and audio playback are unaffected if you never enable it.
+
+#### SwiftData Model Container Setup (required if you enable it)
 
 If you plan to use the **eye-tracking reading progress feature**, you must include the `ReadingSession` model in your app's SwiftData `ModelContainer` schema. This model persists reading sessions locally for progress tracking and resumption.
 
@@ -398,10 +410,15 @@ If your app pins realm-swift 10.x, SwiftPM will fail to resolve until you bump i
 [10 → 20 migration notes](https://github.com/realm/realm-swift/releases) cover any API changes on
 your side.
 
-**Your existing Realm data upgrades in place.** MushafImad copies the bundled `quran.realm` only when
-absent, so an app updating from 1.x opens its existing file and Realm performs a one-way file-format
-upgrade (core 14 → core 20). This is not reversible: a file opened by 2.0.0 cannot be reopened by a
-1.x build. Test the upgrade on a device carrying real 1.x data before shipping.
+**About your existing Realm data.** The bundled `quran.realm` is unchanged in 2.0.0 — byte-identical
+to the one 1.x shipped, at Realm file format 23. MushafImad copies it into Application Support only
+when absent, so an app updating from 1.x keeps the copy it already made rather than picking up a new
+one. realm-swift 20 opens that file directly; the same file is what a fresh 2.0.0 install copies and
+opens.
+
+If realm-swift 20 does decide to upgrade the file format on open, that step is one-way — a file
+opened by 2.0.0 cannot be reopened by a 1.x build. Worth one pass on a device carrying real 1.x data
+before shipping to users.
 
 ### 2. `MushafView` now follows recitation (behavior change)
 
