@@ -53,7 +53,7 @@ public struct TafseerView: View {
 
             contentArea
         }
-        .background(Color(.systemBackground))
+        .background(.background)
         .task {
             await viewModel.load(surahId: surahId, ayahId: ayahId)
         }

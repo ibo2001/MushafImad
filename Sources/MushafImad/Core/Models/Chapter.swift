@@ -72,9 +72,9 @@ public final class Chapter: Object, Identifiable {
 extension Chapter {
     @MainActor
     static var mock: Chapter {
-        if let c = RealmService.shared.getChapter(number: 1) {
-            return c
-        }
+        // Deliberately unmanaged. `RealmService` vends frozen objects, so
+        // sourcing this from the bundled Realm made the mock unwritable
+        // whenever that Realm happened to open — and mutable when it didn't.
         let fatiha = Chapter()
 
         fatiha.number = 1
