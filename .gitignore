@@ -54,6 +54,17 @@ buildServer.json
 #AI
 copilot-instructions.md
 agents/
+CLAUDE.md
+AGENTS.md
+GEMINI.md
+.claude/
+.codex/
+.superpowers/
+docs/superpowers/
+.cursorrules
+
+# Private working notes (specs, plans, research) — never shipped
+notes/
 
 # Node.js (not used — prevent accidental commits)
 package-lock.json
