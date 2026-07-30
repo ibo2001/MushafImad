@@ -1,0 +1,33 @@
+.gitignore
+  s_621a2e3d12359c::t_2f46204e760e8b 57-64
+  s_621a2e3d12359c::t_f03c3ab73e97ea 66-67
+  s_621a2e3d12359c::t_051b3e74737f61 65
+Example/Example.xcodeproj/xcshareddata/xcschemes/AyahOfTheDayWidgetExtension.xcscheme
+  s_e099777c255c7e::t_d71bf99a7fd564 1-115
+Example/Example.xcodeproj/xcshareddata/xcschemes/Example.xcscheme
+  s_e099777c255c7e::t_7e0a0d96e6b47d 1-79
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.18",
+  "base_commit_sha": "40c8a1e14100235a62b0bc2e5e9ab6eb2129a6db",
+  "prompts": {},
+  "sessions": {
+    "s_621a2e3d12359c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e0cf3348-b3a7-432e-a88c-6351d56d04e9",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    },
+    "s_e099777c255c7e": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "83e5ff67-a8e6-44a8-922c-123c209e1ee1",
+        "model": "claude-opus-4-8"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
