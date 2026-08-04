@@ -51,18 +51,6 @@ fastlane/test_output
 # Build server configuration (auto-generated)
 buildServer.json
 
-#AI
-copilot-instructions.md
-agents/
-CLAUDE.md
-AGENTS.md
-GEMINI.md
-.claude/
-.codex/
-.superpowers/
-docs/superpowers/
-.cursorrules
-
 # Private working notes (specs, plans, research) — never shipped
 notes/
 
