@@ -456,8 +456,9 @@ Please refer to the comprehensive [TROUBLESHOOTING.md](TROUBLESHOOTING.md) guide
 
 ## Contributing
 
-We are actively seeking contributors for the **Ramadan Impact** campaign!
-Please read our **[CONTRIBUTING.md](CONTRIBUTING.md)** guide specifically designed to help you get started quickly and follow our contribution workflow.
+We are actively seeking contributors for the **كود يخدم القرآن · Code Serves the Quran** campaign (10 August – 10 October 2026).
+
+Please read **[CONTRIBUTING.md](CONTRIBUTING.md)** — or **[بالعربية](CONTRIBUTING.ar.md)** — before you start. It covers the workflow, the position on AI tools, and the prerequisites you need to build and test the package.
 
 ---
 
