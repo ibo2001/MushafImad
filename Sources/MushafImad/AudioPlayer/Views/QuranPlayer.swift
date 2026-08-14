@@ -195,6 +195,7 @@ public struct QuranPlayer: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(accentColor)
             }
+            .accessibilityHidden(true)
         }
     }
 
