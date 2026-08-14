@@ -36,7 +36,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 - **🎯 True Cross-Platform** – Native support for iOS 17+ and macOS 14+ with platform-specific UI adaptations and zero compromises.
 - **📱 Rich Mushaf View** – `MushafView` renders all 604 pages with selectable verses, RTL paging, and theming via `ReadingTheme`.
 - **💾 Realm-backed data** – Bundled `quran.realm` database powers fast, offline access to chapters, verses, parts (juz'), hizb metadata, and headers.
-- **⚡ Aggressive caching** – `ChaptersDataCache`, `QuranDataCacheService`, and `QuranImageProvider` keep Realm objects and page images warm for smooth scrolling.
+- **⚡ Aggressive caching** – `ChaptersDataCache` and `QuranDataCacheService` keep Realm chapter and page metadata warm for smooth scrolling. Line images are loaded on demand by `QuranLineImageView` from `Bundle.module` (no separate image-provider type).
 - **🎵 Integrated audio playback** – `QuranPlayerViewModel` coordinates `AVPlayer`, `ReciterService`, and `AyahTimingService` to sync highlighting with audio recitation. `QuranPlayerCoordinator` keeps playback exclusive and drives the lock screen.
 - **🧩 Reusable UI components** – Toasts, hizb progress indicators, loading views, and sheet headers are available in `Sources/Components`.
 - **📦 Example app** – The `Example` target demonstrates embedding `MushafView` on both iOS and macOS with very little wiring.
@@ -53,8 +53,8 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
     - `FontRegistrar`, `AppLogger`, `ToastManager`, and `ChaptersDataCache` provide support utilities.
   - `Extensions` – Convenience helpers for colors, fonts, numbers, bundle access, and RTL-friendly UI utilities.
 - `Sources/Services` – UI-facing services specific to the Mushaf reader:
-  - `MushafView+ViewModel` orchestrates page state, caching, and navigation.
-  - `QuranImageProvider` loads line images from the bundle with memory caching.
+ - `MushafView+ViewModel` orchestrates page state, caching, and navigation.
+- `QuranLineImageView` – Loads each mushaf line from `Bundle.module` at `quran-images/<page>/<line>.png` and renders it with `.renderingMode(.template)` so the reading theme can tint the script.
 - `Sources/AudioPlayer`
   - `ViewModels/QuranPlayerViewModel` bridges `AVPlayer` with verse timing for audio playback.
   - `Services/QuranPlayerCoordinator` is the single source of truth for the active player and the currently recited verse.
@@ -77,7 +77,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 2. **Rendering pages**
    - `MushafView` instantiates `ViewModel`, which pulls chapter metadata from `ChaptersDataCache` and prefetches page data.
    - `PageContainer` loads `Page` objects lazily via `RealmService.fetchPageAsync(number:)` and hands them to `QuranPageView`.
-   - `QuranImageProvider` loads line images directly from the bundle with memory caching for fast re-access.
+   - `QuranLineImageView` loads each line image from `Bundle.module` (`quran-images/<page>/<line>.png`) and renders it with `.renderingMode(.template)` so the reading theme can tint the script. Image caching is not a separate type — the warm caches are `ChaptersDataCache` and `QuranDataCacheService` for Realm metadata.
 3. **Audio playback**
    - `ReciterService` exposes reciter metadata, persisting selections via `@AppStorage`.
    - `QuranPlayerViewModel` configures `AVPlayer` with the selected reciter’s base URL and uses `AyahTimingService` to highlight verses in sync with playback.
