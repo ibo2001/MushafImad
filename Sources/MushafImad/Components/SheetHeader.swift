@@ -31,6 +31,7 @@ public struct SheetHeader<Content: View>: View {
                 Image(systemName: "xmark")
                     .font(.system(size: 17, weight: .semibold))
             }
+            .accessibilityLabel(Text(String(localized: "Close")))
             .frame(width: 44, height: 44)
             .background(.secondary.opacity(0.16), in: Circle())
             .foregroundStyle(.secondary)

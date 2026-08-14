@@ -1,6 +1,26 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "Adjusts recitation position" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ضبط موضع التلاوة"
+          }
+        }
+      }
+    },
+    "AirPlay" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirPlay"
+          }
+        }
+      }
+    },
     "AyahOfTheDay.description" : {
       "localizations" : {
         "ar" : {
@@ -450,6 +470,26 @@
         }
       }
     },
+    "Choose reciter" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختيار القارئ"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إغلاق"
+          }
+        }
+      }
+    },
     "Comfy" : {
       "localizations" : {
         "ar" : {
@@ -466,6 +506,106 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "المصحف الكامل • ٦٠٤ صفحة"
+          }
+        }
+      }
+    },
+    "Change recitation speed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تبديل سرعة التلاوة"
+          }
+        }
+      }
+    },
+    "Next verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية التالية"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إيقاف مؤقت"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تشغيل"
+          }
+        }
+      }
+    },
+    "Recitation position" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "موضع التلاوة"
+          }
+        }
+      }
+    },
+    "Recitation speed %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سرعة التلاوة %@"
+          }
+        }
+      }
+    },
+    "Previous verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية السابقة"
+          }
+        }
+      }
+    },
+    "Repeat" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تكرار"
+          }
+        }
+      }
+    },
+    "Repeat on" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التكرار مفعّل"
+          }
+        }
+      }
+    },
+    "Verse %lld" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية %lld"
           }
         }
       }
