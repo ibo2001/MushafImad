@@ -53,8 +53,8 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
     - `FontRegistrar`, `AppLogger`, `ToastManager`, and `ChaptersDataCache` provide support utilities.
   - `Extensions` – Convenience helpers for colors, fonts, numbers, bundle access, and RTL-friendly UI utilities.
 - `Sources/Services` – UI-facing services specific to the Mushaf reader:
- - `MushafView+ViewModel` orchestrates page state, caching, and navigation.
-- `QuranLineImageView` – Loads each mushaf line from `Bundle.module` at `quran-images/<page>/<line>.png` and renders it with `.renderingMode(.template)` so the reading theme can tint the script.
+  - `MushafView+ViewModel` orchestrates page state, caching, and navigation.
+- `Sources/` (target root) – The SwiftUI reader surface: `MushafView`, `PageContainer`, `QuranPageView`, and `QuranLineImageView`, which loads each line from `Bundle.module` at `quran-images/<page>/<line>.png` and renders it with `.renderingMode(.template)` so the reading theme can tint the script.
 - `Sources/AudioPlayer`
   - `ViewModels/QuranPlayerViewModel` bridges `AVPlayer` with verse timing for audio playback.
   - `Services/QuranPlayerCoordinator` is the single source of truth for the active player and the currently recited verse.
@@ -77,7 +77,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 2. **Rendering pages**
    - `MushafView` instantiates `ViewModel`, which pulls chapter metadata from `ChaptersDataCache` and prefetches page data.
    - `PageContainer` loads `Page` objects lazily via `RealmService.fetchPageAsync(number:)` and hands them to `QuranPageView`.
-   - `QuranLineImageView` loads each line image from `Bundle.module` (`quran-images/<page>/<line>.png`) and renders it with `.renderingMode(.template)` so the reading theme can tint the script. Image caching is not a separate type — the warm caches are `ChaptersDataCache` and `QuranDataCacheService` for Realm metadata.
+   - `QuranLineImageView` loads each line image from the bundle on demand — there is no image cache; the warm caches (`ChaptersDataCache`, `QuranDataCacheService`) hold Realm metadata only.
 3. **Audio playback**
    - `ReciterService` exposes reciter metadata, persisting selections via `@AppStorage`.
    - `QuranPlayerViewModel` configures `AVPlayer` with the selected reciter’s base URL and uses `AyahTimingService` to highlight verses in sync with playback.
