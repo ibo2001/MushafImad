@@ -99,6 +99,7 @@ public struct QuranPlayer: View {
                         .overlay(alignment: .bottomLeading) {
                             playbackStateView
                                 .offset(y:40)
+                                .accessibilityHidden(true)
                         }
                 }
         })
@@ -159,6 +160,8 @@ public struct QuranPlayer: View {
         .font(.system(size: 18, weight: .medium))
         .foregroundColor(.secondary)
         .frame(height: 30)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(surahAccessibilityLabel))
     }
 
     private var progressSection: some View {
@@ -277,6 +280,13 @@ public struct QuranPlayer: View {
             return String(localized: "Verse \(verse)")
         }
         return viewModel.currentTime.formatTime
+    }
+
+    private var surahAccessibilityLabel: String {
+        if let verse = viewModel.currentVerseNumber, verse > 0 {
+            return "\(viewModel.chapterName), \(String(localized: "Verse \(verse)"))"
+        }
+        return viewModel.chapterName
     }
 
     private func progressRatio(at x: CGFloat, width: CGFloat) -> Double {
