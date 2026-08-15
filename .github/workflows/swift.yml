@@ -19,4 +19,6 @@ jobs:
     - name: Build
       run: swift build -v
     - name: Run tests
-      run: swift test -v
+      # Serial by design: the suites share singletons (RealmService.shared, the
+      # data caches), so a parallel run is flaky and silently covers less.
+      run: swift test --no-parallel -v
