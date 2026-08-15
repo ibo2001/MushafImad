@@ -8,7 +8,35 @@ import CoreGraphics
 @Suite(.serialized)
 @MainActor
 struct FallbackGazeEstimatorTests {
-    
+
+    // MARK: - Helpers
+
+    /// Reads the estimator's current gaze, waiting a little longer if the update
+    /// timer has not fired yet.
+    ///
+    /// `startForPage` drives updates from a 0.25s `Timer` on `RunLoop.main`, and the
+    /// timer body hops onto the main actor again before `estimatedGaze` is assigned.
+    /// A fixed `Task.sleep` gives both hops exactly one chance to land, which is
+    /// enough on a quiet machine and not enough on a loaded CI runner — there the
+    /// gaze came back nil, and the force-unwrap that followed trapped and took the
+    /// whole test process down with it.
+    ///
+    /// Polling costs nothing when the timer has already fired: the common path
+    /// returns immediately and the surrounding sleeps keep their original timing.
+    private func waitForGaze(
+        from estimator: FallbackGazeEstimator,
+        timeout: TimeInterval = 2
+    ) async -> GazePoint? {
+        if let gaze = estimator.estimatedGaze { return gaze }
+
+        let deadline = Date().addingTimeInterval(timeout)
+        while Date() < deadline {
+            try? await Task.sleep(nanoseconds: 50_000_000)
+            if let gaze = estimator.estimatedGaze { return gaze }
+        }
+        return nil
+    }
+
     // MARK: - Initialization Tests
     
     @Test
@@ -94,13 +122,13 @@ struct FallbackGazeEstimatorTests {
         
         // Wait for timer to fire
         try? await Task.sleep(nanoseconds: 300_000_000)  // 0.3 seconds
-        
+
         // Assert
-        #expect(estimator.estimatedGaze != nil)
+        #expect(await waitForGaze(from: estimator) != nil)
     }
     
     @Test
-    func testEstimatedGazeStartsAtTopOfPage() async {
+    func testEstimatedGazeStartsAtTopOfPage() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         let pageFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
@@ -110,14 +138,13 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         
         // Assert
-        let gaze = estimator.estimatedGaze
-        #expect(gaze != nil)
+        let gaze = try #require(await waitForGaze(from: estimator))
         // Y position should be near the top (first line)
-        #expect(gaze!.screenPosition.y < 200)
+        #expect(gaze.screenPosition.y < 200)
     }
     
     @Test
-    func testEstimatedGazeProgressesOverTime() async {
+    func testEstimatedGazeProgressesOverTime() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600  // Very fast for testing
@@ -126,21 +153,19 @@ struct FallbackGazeEstimatorTests {
         // Act
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let firstGaze = estimator.estimatedGaze
-        
+        let firstGaze = try #require(await waitForGaze(from: estimator))
+
         try? await Task.sleep(nanoseconds: 500_000_000)
-        let secondGaze = estimator.estimatedGaze
-        
+        let secondGaze = try #require(await waitForGaze(from: estimator))
+
         // Assert - Y position should increase (moving down the page)
-        #expect(firstGaze != nil)
-        #expect(secondGaze != nil)
         withKnownIssue(experimentalGazeProgression) {
-            #expect(secondGaze!.screenPosition.y > firstGaze!.screenPosition.y)
+            #expect(secondGaze.screenPosition.y > firstGaze.screenPosition.y)
         }
     }
     
     @Test
-    func testEstimatedGazeRTLDirection() async {
+    func testEstimatedGazeRTLDirection() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600  // Fast for testing
@@ -149,24 +174,22 @@ struct FallbackGazeEstimatorTests {
         // Act
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let firstGaze = estimator.estimatedGaze
-        
+        let firstGaze = try #require(await waitForGaze(from: estimator))
+
         try? await Task.sleep(nanoseconds: 200_000_000)
-        let secondGaze = estimator.estimatedGaze
-        
+        let secondGaze = try #require(await waitForGaze(from: estimator))
+
         // Assert - X position should decrease (RTL: moving from right to left)
-        #expect(firstGaze != nil)
-        #expect(secondGaze != nil)
         // Within same line, X should move left (decrease)
-        if firstGaze!.screenPosition.y == secondGaze!.screenPosition.y {
-            #expect(secondGaze!.screenPosition.x <= firstGaze!.screenPosition.x)
+        if firstGaze.screenPosition.y == secondGaze.screenPosition.y {
+            #expect(secondGaze.screenPosition.x <= firstGaze.screenPosition.x)
         }
     }
     
     // MARK: - Reading Speed Configuration Tests
     
     @Test
-    func testChangingReadingSpeedAffectsEstimation() async {
+    func testChangingReadingSpeedAffectsEstimation() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         let pageFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
@@ -175,20 +198,18 @@ struct FallbackGazeEstimatorTests {
         estimator.arabicWordsPerMinute = 40
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let slowGaze = estimator.estimatedGaze
+        let slowGaze = try #require(await waitForGaze(from: estimator))
         estimator.stopEstimating()
-        
+
         // Test with fast reading speed
         estimator.arabicWordsPerMinute = 200
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let fastGaze = estimator.estimatedGaze
-        
+        let fastGaze = try #require(await waitForGaze(from: estimator))
+
         // Assert - faster reading should progress further down the page
-        #expect(slowGaze != nil)
-        #expect(fastGaze != nil)
         withKnownIssue(experimentalGazeProgression) {
-            #expect(fastGaze!.screenPosition.y > slowGaze!.screenPosition.y)
+            #expect(fastGaze.screenPosition.y > slowGaze.screenPosition.y)
         }
     }
     
@@ -207,7 +228,7 @@ struct FallbackGazeEstimatorTests {
     // MARK: - Pause/Resume Tests
     
     @Test
-    func testPauseStopsProgressionTemporarily() async {
+    func testPauseStopsProgressionTemporarily() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600  // Fast for testing
@@ -216,22 +237,20 @@ struct FallbackGazeEstimatorTests {
         // Act
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let beforePause = estimator.estimatedGaze
-        
+        let beforePause = try #require(await waitForGaze(from: estimator))
+
         estimator.pause()
         try? await Task.sleep(nanoseconds: 500_000_000)  // Paused for 0.5s
-        let duringPause = estimator.estimatedGaze
-        
+        let duringPause = try #require(await waitForGaze(from: estimator))
+
         // Assert - position should not change significantly during pause
-        #expect(beforePause != nil)
-        #expect(duringPause != nil)
         // Allow small difference due to timer updates
-        let yDiff = abs(duringPause!.screenPosition.y - beforePause!.screenPosition.y)
+        let yDiff = abs(duringPause.screenPosition.y - beforePause.screenPosition.y)
         #expect(yDiff < 50)  // Should be minimal movement
     }
     
     @Test
-    func testResumeAfterPauseContinuesProgression() async {
+    func testResumeAfterPauseContinuesProgression() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600
@@ -245,15 +264,13 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         estimator.resume()
         
-        let afterResume = estimator.estimatedGaze
+        let afterResume = try #require(await waitForGaze(from: estimator))
         try? await Task.sleep(nanoseconds: 500_000_000)
-        let afterMoreTime = estimator.estimatedGaze
-        
+        let afterMoreTime = try #require(await waitForGaze(from: estimator))
+
         // Assert - should continue progressing after resume
-        #expect(afterResume != nil)
-        #expect(afterMoreTime != nil)
         withKnownIssue(experimentalGazeProgression) {
-            #expect(afterMoreTime!.screenPosition.y > afterResume!.screenPosition.y)
+            #expect(afterMoreTime.screenPosition.y > afterResume.screenPosition.y)
         }
     }
     
@@ -281,10 +298,10 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         
         // Assert - should still be generating estimates
-        #expect(estimator.estimatedGaze != nil)
+        #expect(await waitForGaze(from: estimator) != nil)
         #expect(estimator.isActive == true)
     }
-    
+
     @Test
     func testPauseWhenNotActiveDoesNothing() async {
         // Arrange
@@ -298,7 +315,7 @@ struct FallbackGazeEstimatorTests {
     // MARK: - Reset Timer Tests
     
     @Test
-    func testResetPageTimerRestartsFromBeginning() async {
+    func testResetPageTimerRestartsFromBeginning() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600
@@ -307,24 +324,22 @@ struct FallbackGazeEstimatorTests {
         // Act
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 500_000_000)
-        let beforeReset = estimator.estimatedGaze
-        
+        let beforeReset = try #require(await waitForGaze(from: estimator))
+
         estimator.resetPageTimer()
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let afterReset = estimator.estimatedGaze
-        
+        let afterReset = try #require(await waitForGaze(from: estimator))
+
         // Assert - after reset, should be back near the top
-        #expect(beforeReset != nil)
-        #expect(afterReset != nil)
         withKnownIssue(experimentalGazeProgression) {
-            #expect(afterReset!.screenPosition.y < beforeReset!.screenPosition.y)
+            #expect(afterReset.screenPosition.y < beforeReset.screenPosition.y)
         }
     }
     
     // MARK: - Confidence Calculation Tests
     
     @Test
-    func testConfidenceDecreasesOverTime() async {
+    func testConfidenceDecreasesOverTime() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 80  // Normal speed
@@ -333,19 +348,17 @@ struct FallbackGazeEstimatorTests {
         // Act
         estimator.startForPage(pageFrame: pageFrame)
         try? await Task.sleep(nanoseconds: 300_000_000)
-        let earlyConfidence = estimator.estimatedGaze?.confidence
-        
+        let earlyConfidence = try #require(await waitForGaze(from: estimator)).confidence
+
         try? await Task.sleep(nanoseconds: 2_000_000_000)  // 2 more seconds
-        let laterConfidence = estimator.estimatedGaze?.confidence
-        
+        let laterConfidence = try #require(await waitForGaze(from: estimator)).confidence
+
         // Assert - confidence should decrease over time
-        #expect(earlyConfidence != nil)
-        #expect(laterConfidence != nil)
-        #expect(laterConfidence! < earlyConfidence!)
+        #expect(laterConfidence < earlyConfidence)
     }
     
     @Test
-    func testConfidenceHasMinimumValue() async {
+    func testConfidenceHasMinimumValue() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 600  // Fast to reach end quickly
@@ -356,9 +369,8 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 3_000_000_000)  // 3 seconds
         
         // Assert - confidence should not go below minimum (0.3)
-        let confidence = estimator.estimatedGaze?.confidence
-        #expect(confidence != nil)
-        #expect(confidence! >= 0.3)
+        let confidence = try #require(await waitForGaze(from: estimator)).confidence
+        #expect(confidence >= 0.3)
     }
     
     // MARK: - Geometry Update Tests
@@ -379,7 +391,7 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         
         // Assert - should still be generating estimates with new geometry
-        #expect(estimator.estimatedGaze != nil)
+        #expect(await waitForGaze(from: estimator) != nil)
         #expect(estimator.isActive == true)
     }
     
@@ -410,7 +422,7 @@ struct FallbackGazeEstimatorTests {
     }
     
     @Test
-    func testEstimationDoesNotExceedPageBounds() async {
+    func testEstimationDoesNotExceedPageBounds() async throws {
         // Arrange
         let estimator = FallbackGazeEstimator()
         estimator.arabicWordsPerMinute = 1200  // Very fast
@@ -421,10 +433,9 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 5_000_000_000)  // 5 seconds - should finish page
         
         // Assert - should clamp to last line
-        let gaze = estimator.estimatedGaze
-        #expect(gaze != nil)
+        let gaze = try #require(await waitForGaze(from: estimator))
         // Y should not exceed page bounds
-        #expect(gaze!.screenPosition.y <= pageFrame.maxY)
+        #expect(gaze.screenPosition.y <= pageFrame.maxY)
     }
     
     @Test
@@ -441,6 +452,6 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         
         // Assert - should handle edge case without crashing
-        #expect(estimator.estimatedGaze != nil)
+        #expect(await waitForGaze(from: estimator) != nil)
     }
 }
