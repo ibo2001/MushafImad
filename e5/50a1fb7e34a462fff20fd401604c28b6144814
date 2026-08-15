@@ -1,0 +1,44 @@
+Tests/MushafImadSPMTests/FallbackGazeEstimatorTests.swift
+  s_621a2e3d12359c::t_f64d9ba5334a79 125
+  s_621a2e3d12359c::t_01ac411382654d 351-352,354-355,357
+  s_621a2e3d12359c::t_c8e214ee7494a9 192
+  s_621a2e3d12359c::t_3d6dcb7b3c279f 11-25,27-39
+  s_621a2e3d12359c::t_e99248f6f61f2b 301,304
+  s_621a2e3d12359c::t_91a768b2ae9a6e 425
+  s_621a2e3d12359c::t_96c11275d8b0fe 361
+  s_621a2e3d12359c::t_1cdfa6f88e1796 253
+  s_621a2e3d12359c::t_bc31e240ef58d6 394
+  s_621a2e3d12359c::t_655b48593e3b36 327-328,331-332,335
+  s_621a2e3d12359c::t_be352057bc5040 372-373
+  s_621a2e3d12359c::t_5742eb3929a3e1 156-157,159-160,163
+  s_621a2e3d12359c::t_275bb9e8b08793 26,127,141
+  s_621a2e3d12359c::t_0535c64c66677b 436,438
+  s_621a2e3d12359c::t_62fc33d3e34c1a 455
+  s_621a2e3d12359c::t_952b8f0414188c 143
+  s_621a2e3d12359c::t_4e5da1591e4410 177-178,180-181,184-185
+  s_621a2e3d12359c::t_c2e640780dec22 231
+  s_621a2e3d12359c::t_a91cbe5160df68 342
+  s_621a2e3d12359c::t_b2605c91e200cd 240-241,244-245,248
+  s_621a2e3d12359c::t_9c5e6177fb8383 131
+  s_621a2e3d12359c::t_9813e4c5ded7dc 168
+  s_621a2e3d12359c::t_77ff338b68bfaf 318
+  s_621a2e3d12359c::t_64eb90483f223c 267,269-270,273
+  s_621a2e3d12359c::t_0bf7852a3cfe72 147
+  s_621a2e3d12359c::t_aff4c4c1680414 201,203,208-209,212
+---
+{
+  "schema_version": "authorship/3.0.0",
+  "git_ai_version": "1.6.22",
+  "base_commit_sha": "e550a1fb7e34a462fff20fd401604c28b6144814",
+  "prompts": {},
+  "sessions": {
+    "s_621a2e3d12359c": {
+      "agent_id": {
+        "tool": "claude",
+        "id": "e0cf3348-b3a7-432e-a88c-6351d56d04e9",
+        "model": "claude-opus-5"
+      },
+      "human_author": "Ibrahim Qraiqe <ibo2001@gmail.com>"
+    }
+  }
+}
