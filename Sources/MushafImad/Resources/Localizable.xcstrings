@@ -1,16 +1,6 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
-    "Adjusts recitation position" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "ضبط موضع التلاوة"
-          }
-        }
-      }
-    },
     "AirPlay" : {
       "localizations" : {
         "ar" : {
@@ -78,6 +68,16 @@
     },
     "%@" : {
 
+    },
+    "%@ elapsed, %@ remaining" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ مضى، %@ متبقي"
+          }
+        }
+      }
     },
     "%lld" : {
       "localizations" : {
@@ -370,6 +370,16 @@
         }
       }
     },
+    "Basmala" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "البسملة"
+          }
+        }
+      }
+    },
     "Bookmark" : {
       "localizations" : {
         "ar" : {
@@ -436,6 +446,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "إلغاء التنزيل؟"
+          }
+        }
+      }
+    },
+    "Change recitation speed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تبديل سرعة التلاوة"
           }
         }
       }
@@ -510,16 +530,6 @@
         }
       }
     },
-    "Change recitation speed" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "تبديل سرعة التلاوة"
-          }
-        }
-      }
-    },
     "Next verse" : {
       "localizations" : {
         "ar" : {
@@ -550,6 +560,16 @@
         }
       }
     },
+    "Previous verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية السابقة"
+          }
+        }
+      }
+    },
     "Recitation position" : {
       "localizations" : {
         "ar" : {
@@ -570,42 +590,12 @@
         }
       }
     },
-    "Previous verse" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الآية السابقة"
-          }
-        }
-      }
-    },
     "Repeat" : {
       "localizations" : {
         "ar" : {
           "stringUnit" : {
             "state" : "translated",
             "value" : "تكرار"
-          }
-        }
-      }
-    },
-    "Repeat on" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "التكرار مفعّل"
-          }
-        }
-      }
-    },
-    "Verse %lld" : {
-      "localizations" : {
-        "ar" : {
-          "stringUnit" : {
-            "state" : "translated",
-            "value" : "الآية %lld"
           }
         }
       }
@@ -1168,6 +1158,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ملاحظات"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "غير مفعّل"
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفعّل"
           }
         }
       }
@@ -1786,6 +1796,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تم التحديث %@"
+          }
+        }
+      }
+    },
+    "Verse %lld" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية %lld"
           }
         }
       }

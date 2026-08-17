@@ -182,7 +182,14 @@ public struct QuranPlayer: View {
                 .accessibilityElement(children: .ignore)
                 .accessibilityLabel(Text(String(localized: "Recitation position")))
                 .accessibilityValue(Text(progressAccessibilityValue))
-                .accessibilityHint(Text(String(localized: "Adjusts recitation position")))
+                .accessibilityAdjustableAction { direction in
+                    guard progressGestureEnabled else { return }
+                    switch direction {
+                    case .increment: _ = viewModel.seekToNextVerse()
+                    case .decrement: _ = viewModel.seekToPreviousVerse()
+                    @unknown default: break
+                    }
+                }
             }
             .frame(height: 6)
 
@@ -209,9 +216,11 @@ public struct QuranPlayer: View {
             }
             .symbolRenderingMode(viewModel.isRepeatEnabled ? .multicolor : .hierarchical)
             .foregroundColor(viewModel.isRepeatEnabled ? accentColor : .brand900)
-            .accessibilityLabel(Text(viewModel.isRepeatEnabled
-                ? String(localized: "Repeat on")
-                : String(localized: "Repeat")))
+            .accessibilityLabel(Text(String(localized: "Repeat")))
+            .accessibilityValue(Text(viewModel.isRepeatEnabled
+                ? String(localized: "On")
+                : String(localized: "Off")))
+            .accessibilityAddTraits(viewModel.isRepeatEnabled ? .isSelected : [])
             
             Button(action: { onPreviousVerse?() }) {
                 Image(systemName: "backward.fill")
@@ -275,18 +284,22 @@ public struct QuranPlayer: View {
         viewModel.duration > 0 && !viewModel.isLoading
     }
 
+    private var recitationPosition: String? {
+        guard let verse = viewModel.currentVerseNumber else { return nil }
+        return verse == 0
+            ? String(localized: "Basmala")
+            : String(localized: "Verse \(verse)")
+    }
+
     private var progressAccessibilityValue: String {
-        if let verse = viewModel.currentVerseNumber, verse > 0 {
-            return String(localized: "Verse \(verse)")
-        }
-        return viewModel.currentTime.formatTime
+        let time = String(localized: "\(viewModel.currentTime.formatTime) elapsed, \(viewModel.remainingTime.formatTime) remaining")
+        guard let position = recitationPosition else { return time }
+        return "\(position), \(time)"
     }
 
     private var surahAccessibilityLabel: String {
-        if let verse = viewModel.currentVerseNumber, verse > 0 {
-            return "\(viewModel.chapterName), \(String(localized: "Verse \(verse)"))"
-        }
-        return viewModel.chapterName
+        guard let position = recitationPosition else { return viewModel.chapterName }
+        return "\(viewModel.chapterName), \(position)"
     }
 
     private func progressRatio(at x: CGFloat, width: CGFloat) -> Double {
