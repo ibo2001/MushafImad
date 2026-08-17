@@ -1,6 +1,16 @@
 {
   "sourceLanguage" : "en",
   "strings" : {
+    "AirPlay" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "AirPlay"
+          }
+        }
+      }
+    },
     "AyahOfTheDay.description" : {
       "localizations" : {
         "ar" : {
@@ -58,6 +68,16 @@
     },
     "%@" : {
 
+    },
+    "%@ elapsed, %@ remaining" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "%@ مضى، %@ متبقي"
+          }
+        }
+      }
     },
     "%lld" : {
       "localizations" : {
@@ -350,6 +370,16 @@
         }
       }
     },
+    "Basmala" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "البسملة"
+          }
+        }
+      }
+    },
     "Bookmark" : {
       "localizations" : {
         "ar" : {
@@ -420,6 +450,16 @@
         }
       }
     },
+    "Change recitation speed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تبديل سرعة التلاوة"
+          }
+        }
+      }
+    },
     "Chapter Not Downloaded" : {
       "localizations" : {
         "ar" : {
@@ -450,6 +490,26 @@
         }
       }
     },
+    "Choose reciter" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "اختيار القارئ"
+          }
+        }
+      }
+    },
+    "Close" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إغلاق"
+          }
+        }
+      }
+    },
     "Comfy" : {
       "localizations" : {
         "ar" : {
@@ -466,6 +526,76 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "المصحف الكامل • ٦٠٤ صفحة"
+          }
+        }
+      }
+    },
+    "Next verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية التالية"
+          }
+        }
+      }
+    },
+    "Pause" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إيقاف مؤقت"
+          }
+        }
+      }
+    },
+    "Play" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تشغيل"
+          }
+        }
+      }
+    },
+    "Previous verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية السابقة"
+          }
+        }
+      }
+    },
+    "Recitation position" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "موضع التلاوة"
+          }
+        }
+      }
+    },
+    "Recitation speed %@" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سرعة التلاوة %@"
+          }
+        }
+      }
+    },
+    "Repeat" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تكرار"
           }
         }
       }
@@ -1028,6 +1158,26 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "ملاحظات"
+          }
+        }
+      }
+    },
+    "Off" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "غير مفعّل"
+          }
+        }
+      }
+    },
+    "On" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مفعّل"
           }
         }
       }
@@ -1646,6 +1796,16 @@
           "stringUnit" : {
             "state" : "translated",
             "value" : "تم التحديث %@"
+          }
+        }
+      }
+    },
+    "Verse %lld" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الآية %lld"
           }
         }
       }

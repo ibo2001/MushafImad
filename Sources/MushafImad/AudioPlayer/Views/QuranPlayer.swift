@@ -64,6 +64,7 @@ public struct QuranPlayer: View {
                     AirPlayRoutePickerView()
                         .frame(height: 50)
                         .padding(.top, 20)
+                        .accessibilityLabel(Text(String(localized: "AirPlay")))
                 }
             }
             .padding(20)
@@ -98,6 +99,7 @@ public struct QuranPlayer: View {
                         .overlay(alignment: .bottomLeading) {
                             playbackStateView
                                 .offset(y:40)
+                                .accessibilityHidden(true)
                         }
                 }
         })
@@ -122,6 +124,8 @@ public struct QuranPlayer: View {
             .frame(height: 30)
         }
         .buttonStyle(.plain)
+        .accessibilityLabel(Text(String(localized: "Choose reciter")))
+        .accessibilityValue(Text(reciterService.selectedReciter?.displayName ?? viewModel.reciterName))
         .sheet(isPresented: $showReciterPicker) {
             ReciterPickerView(
                 reciters: reciterService.availableReciters,
@@ -156,6 +160,8 @@ public struct QuranPlayer: View {
         .font(.system(size: 18, weight: .medium))
         .foregroundColor(.secondary)
         .frame(height: 30)
+        .accessibilityElement(children: .ignore)
+        .accessibilityLabel(Text(surahAccessibilityLabel))
     }
 
     private var progressSection: some View {
@@ -173,6 +179,17 @@ public struct QuranPlayer: View {
                 .contentShape(Rectangle())
                 .gesture(progressGesture(in: geometry.size.width))
                 .allowsHitTesting(progressGestureEnabled)
+                .accessibilityElement(children: .ignore)
+                .accessibilityLabel(Text(String(localized: "Recitation position")))
+                .accessibilityValue(Text(progressAccessibilityValue))
+                .accessibilityAdjustableAction { direction in
+                    guard progressGestureEnabled else { return }
+                    switch direction {
+                    case .increment: _ = viewModel.seekToNextVerse()
+                    case .decrement: _ = viewModel.seekToPreviousVerse()
+                    @unknown default: break
+                    }
+                }
             }
             .frame(height: 6)
 
@@ -188,6 +205,7 @@ public struct QuranPlayer: View {
                     .font(.system(size: 14, weight: .medium))
                     .foregroundColor(accentColor)
             }
+            .accessibilityHidden(true)
         }
     }
 
@@ -198,6 +216,11 @@ public struct QuranPlayer: View {
             }
             .symbolRenderingMode(viewModel.isRepeatEnabled ? .multicolor : .hierarchical)
             .foregroundColor(viewModel.isRepeatEnabled ? accentColor : .brand900)
+            .accessibilityLabel(Text(String(localized: "Repeat")))
+            .accessibilityValue(Text(viewModel.isRepeatEnabled
+                ? String(localized: "On")
+                : String(localized: "Off")))
+            .accessibilityAddTraits(viewModel.isRepeatEnabled ? .isSelected : [])
             
             Button(action: { onPreviousVerse?() }) {
                 Image(systemName: "backward.fill")
@@ -205,12 +228,16 @@ public struct QuranPlayer: View {
                     .opacity(onPreviousVerse == nil ? 0.35 : 1)
             }
             .disabled(onPreviousVerse == nil || viewModel.isLoading)
+            .accessibilityLabel(Text(String(localized: "Previous verse")))
             
             Button(action: viewModel.togglePlayback) {
                 Image(systemName: viewModel.isPlaying ? "pause.fill" : "play.fill")
                     .font(.system(size: 42))
             }
             .disabled(viewModel.isLoading && !viewModel.isPlaying)
+            .accessibilityLabel(Text(viewModel.isPlaying
+                ? String(localized: "Pause")
+                : String(localized: "Play")))
             
             Button(action: { onNextVerse?() }) {
                 Image(systemName: "forward.fill")
@@ -218,12 +245,14 @@ public struct QuranPlayer: View {
                     .opacity(onNextVerse == nil ? 0.35 : 1)
             }
             .disabled(onNextVerse == nil || viewModel.isLoading)
-            
+            .accessibilityLabel(Text(String(localized: "Next verse")))
             
             Button(action: viewModel.cyclePlaybackRate) {
                 Image(systemName: "gauge.with.dots.needle.50percent")
             }
             .disabled(viewModel.isLoading)
+            .accessibilityLabel(Text(String(localized: "Recitation speed \(playbackRateLabel(for: viewModel.playbackRate))")))
+            .accessibilityHint(Text(String(localized: "Change recitation speed")))
         }
         .font(.system(size: 22))
         .bold()
@@ -253,6 +282,24 @@ public struct QuranPlayer: View {
 
     private var progressGestureEnabled: Bool {
         viewModel.duration > 0 && !viewModel.isLoading
+    }
+
+    private var recitationPosition: String? {
+        guard let verse = viewModel.currentVerseNumber else { return nil }
+        return verse == 0
+            ? String(localized: "Basmala")
+            : String(localized: "Verse \(verse)")
+    }
+
+    private var progressAccessibilityValue: String {
+        let time = String(localized: "\(viewModel.currentTime.formatTime) elapsed, \(viewModel.remainingTime.formatTime) remaining")
+        guard let position = recitationPosition else { return time }
+        return "\(position), \(time)"
+    }
+
+    private var surahAccessibilityLabel: String {
+        guard let position = recitationPosition else { return viewModel.chapterName }
+        return "\(viewModel.chapterName), \(position)"
     }
 
     private func progressRatio(at x: CGFloat, width: CGFloat) -> Double {
