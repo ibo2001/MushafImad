@@ -116,6 +116,32 @@ suite green.
 *   `Tests/MushafImadSPMTests/` — the test suite
 *   `Example/` — a sample app for iOS and macOS
 
+### Build-time tooling
+
+Scripts at the repository root provide reproducible build-time asset generation. They are **not**
+shipped inside the package.
+
+| Script | Purpose |
+| --- | --- |
+| `configure_example_project.sh` | Sets up the Example Xcode project for network access |
+| `compose_page_images.swift` | Composites 15 line PNGs per page into 604 full-page images |
+
+#### Composing page images
+
+The package ships 604 × 15 individual line images (`Sources/MushafImad/quran-images/<page>/<line>.png`,
+each 1440×232). To generate full-page composites:
+
+```bash
+swift compose_page_images.swift
+```
+
+Output is written to `Sources/MushafImad/quran-page-images/<page>.png` (1440×3480 RGBA PNG). This
+directory is `.gitignore`d because the generated output (~287 MB) is larger than the source line
+images (~96 MB) — PNG compression is less effective on larger canvases.
+
+The script is deterministic: running it twice on the same inputs produces byte-identical output.
+Generated images preserve the alpha channel required for `.renderingMode(.template)` tinting.
+
 ## Code of Conduct
 
 We follow the general principles of Islamic brotherhood/sisterhood: act with kindness, respect, and
