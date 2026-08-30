@@ -73,13 +73,12 @@ public struct QuranPageView<Header: View, Footer: View>: View {
                     // Page lines
                     VStack(spacing:0) {
                         headerBuilder()
-                        ForEach(0...14,id: \.self) { line in
+                        ForEach(MushafPageGeometry.lineIndices, id: \.self) { line in
                             LineImageView(
                                 pageNumber: pageNumber,
                                 chapterheader: Array(page.chapterHeaders1441),
                                 line: line,
                                 verses: Array(page.verses1441),
-                                container: CGSize(width: availableWidth, height: lineHeight),
                                 selectedVerse: selectedVerse,
                                 highlightedVerse: initialHighlightedVerse,
                                 pressingVerseID: $pressingVerseID,
@@ -101,13 +100,12 @@ public struct QuranPageView<Header: View, Footer: View>: View {
                 // Portrait: Fit to screen without scrolling, header and footer fixed
                 VStack(spacing:0) {
                     headerBuilder()
-                    ForEach(0...14,id: \.self) { line in
+                    ForEach(MushafPageGeometry.lineIndices, id: \.self) { line in
                         LineImageView(
                             pageNumber: pageNumber,
                             chapterheader: Array(page.chapterHeaders1441),
                             line: line,
                             verses: Array(page.verses1441),
-                            container: CGSize(width: availableWidth, height: availableHeight),
                             selectedVerse: selectedVerse,
                             highlightedVerse: initialHighlightedVerse,
                             pressingVerseID: $pressingVerseID,
@@ -150,39 +148,33 @@ private struct LineImageView: View {
     let chapterheader: [ChapterHeader]
     let line: Int
     let verses: [Verse]
-    let container: CGSize
     let selectedVerse: Verse?
     let highlightedVerse: Verse?
     @Binding var pressingVerseID: Int?
     var onTap: (Verse) -> Void
-    // Original line image dimensions (all line images are 1440 x 232 pixels)
-    private let originalLineSize = CGSize(width: 1440, height: 232)
-    
+
     // Timer to delay highlight activation
     @State private var highlightTimer: Timer?
-    
+
     var selectedCorners: UIRectCorner {
         return [.allCorners]
     }
-    
+
     private func shouldHighlight(_ verse: Verse) -> Bool {
-        return selectedVerse?.verseID == verse.verseID || 
+        return selectedVerse?.verseID == verse.verseID ||
                highlightedVerse?.verseID == verse.verseID ||
                pressingVerseID == verse.verseID
     }
 
     @ViewBuilder
-    private func verseHighlightsView(verse: Verse, geometry: GeometryProxy) -> some View {
+    private func verseHighlightsView(verse: Verse, pageGeometry: MushafPageGeometry) -> some View {
         ForEach(verse.highlights1441.filter({ $0.line == line }), id: \.self) { highlight in
-            let visualLeftX = geometry.size.width * CGFloat(1.0 - highlight.right)
-            let visualRightX = geometry.size.width * CGFloat(1.0 - highlight.left)
-            let highlightWidth = visualRightX - visualLeftX
-            let highlightHeight = geometry.size.height * 0.94
-            
+            let placement = pageGeometry.highlightPlacement(for: highlight)
+
             Rectangle()
                 .fill(shouldHighlight(verse) ? Color(.accent900) : Color.clear)
                 .cornerRadius(8, corners: selectedCorners)
-                .frame(width: highlightWidth, height: highlightHeight)
+                .frame(width: placement.size.width, height: placement.size.height)
                 .contentShape(Rectangle())
                 .onLongPressGesture(minimumDuration: 1, pressing: { isPressing in
                     if isPressing {
@@ -207,7 +199,7 @@ private struct LineImageView: View {
                     pressingVerseID = nil
                     onTap(verse)
                 })
-                .position(x: visualLeftX + highlightWidth / 2, y: highlightHeight * 0.8)
+                .position(placement.center)
                 .background(
                     GeometryReader { proxy in
                         Color.clear.preference(
@@ -218,56 +210,37 @@ private struct LineImageView: View {
                 )
         }
     }
-    
+
     var body: some View {
-        let imageAspect = originalLineSize.width / originalLineSize.height
-        let containerWidth = container.width
-        
         ZStack {
             GeometryReader { geometry in
-                let scaledImageHeight = geometry.size.width / imageAspect
-                let cropOffset = (scaledImageHeight - geometry.size.height) / 2
-                let lineScale = geometry.size.width / originalLineSize.width
+                let pageGeometry = MushafPageGeometry(containerSize: geometry.size)
 
                 ForEach(verses, id: \.verseID) { verse in
-                    verseHighlightsView(verse: verse, geometry: geometry)
-                    
+                    verseHighlightsView(verse: verse, pageGeometry: pageGeometry)
+
                     // Only render marker if it belongs to this line
                     if let marker = verse.marker1441, marker.line == line {
-                        let markerX = geometry.size.width * CGFloat(1.0 - marker.centerX)
-                        
-                        let fullImageY = scaledImageHeight * CGFloat(marker.centerY)
-                        let markerY = fullImageY - cropOffset
-                        
-                        VerseFasel(number: verse.number, scale: lineScale)
-                            .position(x: markerX, y: markerY + 10)
+                        VerseFasel(number: verse.number, scale: pageGeometry.lineScale)
+                            .position(pageGeometry.markerCenter(for: marker))
                             .allowsHitTesting(false)
                     }
                 }
-                
+
                 ForEach(chapterheader, id: \.self){ chapterheader in
-                    let chapterX = geometry.size.width * CGFloat(1.0 - chapterheader.centerX)
-                    
-                    let fullImageY = scaledImageHeight * CGFloat(chapterheader.centerY)
-                    let chapterY = fullImageY - cropOffset
-                    
                     if chapterheader.line == line {
+                        let placement = pageGeometry.chapterBarPlacement(for: chapterheader)
                         MushafAssets.image(named: "suraNameBar")
                             .resizable()
-                            .frame(width:containerWidth * 0.9,height: scaledImageHeight * 0.8)
-                            .position(x: chapterX, y: chapterY + 8)
+                            .frame(width: placement.size.width, height: placement.size.height)
+                            .position(placement.center)
                             .allowsHitTesting(false)
                     }
                 }
-                
-                QuranLineImageView(
-                    page: pageNumber,
-                    line: line + 1,
-                    imageAspect: imageAspect,
-                    containerWidth: containerWidth,
-                    scaledImageHeight: scaledImageHeight
-                )
-                .allowsHitTesting(false)
+
+                MushafRendering.configuration.renderSource
+                    .lineView(page: pageNumber, line: line, containerSize: geometry.size)
+                    .allowsHitTesting(false)
             }
         }
     }
