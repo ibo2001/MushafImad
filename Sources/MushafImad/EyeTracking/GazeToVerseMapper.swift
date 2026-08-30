@@ -55,12 +55,23 @@ internal final class GazeToVerseMapper: ObservableObject {
     /// Original line image dimensions.
     private static let originalLineWidth: CGFloat = 1440
     private static let originalLineHeight: CGFloat = 232
-    
+
     /// Multiplier to match QuranPageView's internal line height scaling.
-    private static let lineHeightScale: CGFloat = 0.73
-    
+    /// QuranPageView uses a smaller factor in landscape because the lines sit
+    /// inside a scroll view there rather than being fit to the screen.
+    private static let portraitLineHeightScale: CGFloat = 0.73
+    private static let landscapeLineHeightScale: CGFloat = 0.7
+
+    /// How far past a verse's nearest edge, in normalized page-width units, a
+    /// miss is still resolved to that verse. Deliberately wider than a single
+    /// verse gap (about 0.2 for two half-width verses either side of centre):
+    /// narrower and gaze jitter between adjacent verses would resolve to
+    /// neither; wider and unrelated verses on a sparse line would start
+    /// absorbing gazes that were never meant for them.
+    private static let nearestVerseEdgeThreshold: Float = 0.25
+
     // MARK: - Page Geometry Cache
-    
+
     /// Cached geometry for the current page, set when the page view measures itself.
     private var pageFrame: CGRect = .zero
     private var headerHeight: CGFloat = 0
@@ -75,14 +86,21 @@ internal final class GazeToVerseMapper: ObservableObject {
     /// - Parameters:
     ///   - frame: The on-screen frame of the page content area (excluding chrome).
     ///   - headerOffset: The height of the page header above the lines.
-    public func updatePageGeometry(frame: CGRect, headerOffset: CGFloat = 40) {
+    ///   - isLandscape: Whether the page is currently rendered in landscape.
+    ///     QuranPageView renders landscape lines inside a scroll view and
+    ///     scales them by a different factor than portrait; this must match
+    ///     whichever one the renderer is actually using, or line boundaries
+    ///     drift and lines near the bottom stop mapping to anything.
+    public func updatePageGeometry(frame: CGRect, headerOffset: CGFloat = 40, isLandscape: Bool = false) {
         self.pageFrame = frame
         self.headerHeight = headerOffset
-        
-        // Each line occupies an equal fraction of the remaining height
+
+        // Each line's height is derived from the available width, matching
+        // QuranPageView, which always scales lines to fit the page's width.
         let availableWidth = frame.width
         let calculatedLineHeight = availableWidth / Self.originalLineWidth * Self.originalLineHeight
-        self.lineHeight = calculatedLineHeight * Self.lineHeightScale  // Match the 0.73 factor from QuranPageView
+        let scale = isLandscape ? Self.landscapeLineHeightScale : Self.portraitLineHeightScale
+        self.lineHeight = calculatedLineHeight * scale
     }
     
     /// Map a screen-space gaze point to a line and verse on the current page.
@@ -90,34 +108,45 @@ internal final class GazeToVerseMapper: ObservableObject {
     /// - Parameters:
     ///   - gazePoint: The estimated gaze position in screen coordinates.
     ///   - verses: The verses on the current page (from `Page.verses1441`).
+    ///   - scrollOffset: How far the page's content has scrolled past its top
+    ///     edge. Portrait pages never scroll, so this is always 0 there.
+    ///     Landscape pages render lines inside a vertical scroll view that is
+    ///     taller than the viewport, so the same on-screen point corresponds
+    ///     to a different line depending on scroll position — the caller
+    ///     must supply it or every gaze below the first screenful of lines
+    ///     will fail to map.
     /// - Returns: A `MappedGazeResult` if the gaze falls within the page area, nil otherwise.
     public func mapGazeToVerse(
         gazePoint: GazePoint,
-        verses: [Verse]
+        verses: [Verse],
+        scrollOffset: CGFloat = 0
     ) -> MappedGazeResult? {
         let screenPos = gazePoint.screenPosition
-        
-        // Check if gaze is within the page frame
+
+        // Check if gaze is within the page's on-screen viewport.
         guard pageFrame.contains(screenPos) else {
             return nil
         }
-        
-        // Position relative to the page's top-left origin
-        let pageRelativeY = screenPos.y - pageFrame.minY
+
+        // Position relative to the page's top-left origin, shifted into
+        // content space by the current scroll offset so a screen point maps
+        // to the line actually under it rather than the line that would be
+        // there if the page were scrolled to the top.
+        let pageRelativeY = (screenPos.y - pageFrame.minY) + scrollOffset
         let pageRelativeX = screenPos.x - pageFrame.minX
-        
+
         // The vertical band occupied by the rendered lines:
         //   top  = headerHeight (matches the PageHeaderView height passed by caller)
         //   bottom = top + lineHeight * linesPerPage
         guard lineHeight > 0 else { return nil }
         let lineBandTop: CGFloat = headerHeight
         let lineBandBottom: CGFloat = lineBandTop + lineHeight * CGFloat(Self.linesPerPage)
-        
+
         // Return nil for header and footer regions — do NOT clamp into line 0 or 14
         guard pageRelativeY >= lineBandTop && pageRelativeY <= lineBandBottom else {
             return nil
         }
-        
+
         // Determine which line the gaze falls on relative to the band start
         let relativeYInBand = pageRelativeY - lineBandTop
         let lineIndex = Int(relativeYInBand / lineHeight)
@@ -199,22 +228,24 @@ internal final class GazeToVerseMapper: ObservableObject {
                     // Direct hit
                     return verse
                 }
-                
-                // Track closest verse in case no direct hit
-                let centerX = (visualLeft + visualRight) / 2.0
-                let distance = abs(normalizedX - centerX)
+
+                // Track the closest verse in case there's no direct hit, measuring to
+                // the nearest edge rather than the centre. Centre distance grows with
+                // the highlight's own width, so a wide verse reads as "far away" even
+                // when the gaze is sitting right beside it.
+                let distance = max(0, max(visualLeft - normalizedX, normalizedX - visualRight))
                 if distance < smallestDistance {
                     smallestDistance = distance
                     bestMatch = verse
                 }
             }
         }
-        
-        // If we're within a reasonable distance (< 10% of page width), return nearest
-        if smallestDistance < 0.1 {
+
+        // If we're within a reasonable distance of a verse's edge, return nearest
+        if smallestDistance < Self.nearestVerseEdgeThreshold {
             return bestMatch
         }
-        
+
         return nil
     }
 }

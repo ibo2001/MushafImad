@@ -617,24 +617,31 @@ struct ReadingProgressTrackerTests {
         let tracker = ReadingProgressTracker()
         let portraitFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
         let verse = makeMockVerse(id: 1, number: 1, highlights: [(line: 5, left: 0.0, right: 1.0)])
-        
+
         tracker.startTracking(pageNumber: 1, verses: [verse], pageFrame: portraitFrame)
-        
-        // Rotate to landscape
+
+        // Rotate to landscape. updateGeometry infers isLandscape from the frame's
+        // aspect ratio, so lines now use the 0.7 line-height factor (not portrait's
+        // 0.73) and render inside a scroll view taller than the viewport.
         let landscapeFrame = CGRect(x: 0, y: 0, width: 812, height: 375)
         tracker.updateGeometry(frame: landscapeFrame)
-        
-        // Create gaze point for landscape orientation
-        let gazeY = yPositionForLine(5, pageWidth: 812, headerOffset: 40)
-        let gazePoint = makeGazePoint(x: 406, y: gazeY)
-        
+
+        // Line 5's midpoint in content space, then the scroll offset that brings
+        // it to the centre of the (shorter) landscape viewport — mirroring what
+        // MushafView reports via QuranPageView's onScrollOffsetChange.
+        let lineHeight = (812.0 / 1440.0 * 232.0) * 0.7
+        let headerOffset: CGFloat = 40 // ReadingProgressTracker's default
+        let contentY = headerOffset + lineHeight * 5.5
+        let screenY = landscapeFrame.height / 2
+        tracker.updateScrollOffset(contentY - screenY)
+
+        let gazePoint = makeGazePoint(x: 406, y: screenY)
+
         // Act
         tracker.processGazePoint(gazePoint)
-        
+
         // Assert
-        withKnownIssue(experimentalRotationTracking) {
-            #expect(tracker.activeLineIndex == 5)
-        }
+        #expect(tracker.activeLineIndex == 5)
     }
     
     // MARK: - Edge Cases

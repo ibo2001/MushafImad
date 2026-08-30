@@ -153,11 +153,13 @@ public final class EyeTrackingCoordinator: ObservableObject {
     ///   - pageNumber: The Mushaf page number (1–604).
     ///   - verses: The verses on the current page.
     ///   - pageFrame: The on-screen frame of the page content area.
+    ///   - headerOffset: The height of the page header above the lines.
     ///   - onPageCompleted: Callback when the tracker detects page completion.
     public func activate(
         pageNumber: Int,
         verses: [Verse],
         pageFrame: CGRect,
+        headerOffset: CGFloat = 40,
         onPageCompleted: (() -> Void)? = nil
     ) {
         guard isEnabled else { return }
@@ -180,7 +182,8 @@ public final class EyeTrackingCoordinator: ObservableObject {
             progressTracker.startTracking(
                 pageNumber: pageNumber,
                 verses: verses,
-                pageFrame: pageFrame
+                pageFrame: pageFrame,
+                headerOffset: headerOffset
             )
         } else if useFallbackMode {
             // User has explicitly requested heuristic (fallback) mode
@@ -189,7 +192,8 @@ public final class EyeTrackingCoordinator: ObservableObject {
             progressTracker.startTracking(
                 pageNumber: pageNumber,
                 verses: verses,
-                pageFrame: pageFrame
+                pageFrame: pageFrame,
+                headerOffset: headerOffset
             )
             fallbackEstimator.startForPage(pageFrame: pageFrame)
             trackingState = .tracking(GazePoint(screenPosition: .zero, confidence: 0.5))
@@ -216,9 +220,15 @@ public final class EyeTrackingCoordinator: ObservableObject {
     }
     
     /// Update geometry after layout changes.
-    public func updateGeometry(frame: CGRect) {
-        progressTracker.updateGeometry(frame: frame)
+    public func updateGeometry(frame: CGRect, headerOffset: CGFloat = 40) {
+        progressTracker.updateGeometry(frame: frame, headerOffset: headerOffset)
         fallbackEstimator.updateGeometry(frame: frame)
+    }
+
+    /// Update how far the page's content has scrolled past its top edge.
+    /// Only meaningful in landscape; see `ReadingProgressTracker.updateScrollOffset`.
+    public func updateScrollOffset(_ offset: CGFloat) {
+        progressTracker.updateScrollOffset(offset)
     }
     
     /// Pause tracking (app backgrounded, sheet presented, etc.).

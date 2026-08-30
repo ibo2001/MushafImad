@@ -121,6 +121,12 @@ public final class ReadingProgressTracker: ObservableObject {
     /// Current page context
     private var currentPageNumber: Int = 0
     private var currentPageVerses: [Verse] = []
+
+    /// How far the page's content has scrolled past its top edge. Only
+    /// meaningful in landscape, where lines render inside a scroll view
+    /// taller than the viewport; the caller must keep this current or gaze
+    /// points below the first screenful of lines will fail to map.
+    private var currentScrollOffset: CGFloat = 0
     
     /// Cancellable subscriptions
     private var cancellables = Set<AnyCancellable>()
@@ -137,22 +143,29 @@ public final class ReadingProgressTracker: ObservableObject {
     ///   - pageNumber: The Mushaf page number (1–604).
     ///   - verses: The verses on this page.
     ///   - pageFrame: The on-screen frame of the page content area.
+    ///   - headerOffset: The height of the page header above the lines.
     public func startTracking(
         pageNumber: Int,
         verses: [Verse],
-        pageFrame: CGRect
+        pageFrame: CGRect,
+        headerOffset: CGFloat = 40
     ) {
         stopTracking()
-        
+
         currentPageNumber = pageNumber
         currentPageVerses = verses
         pageCompleted = false
         readingProgress = 0
         activeVerse = nil
         activeLineIndex = 0
-        
-        gazeMapper.updatePageGeometry(frame: pageFrame)
-        
+        currentScrollOffset = 0
+
+        gazeMapper.updatePageGeometry(
+            frame: pageFrame,
+            headerOffset: headerOffset,
+            isLandscape: pageFrame.width > pageFrame.height
+        )
+
         // Initialize session
         sessionStartTime = Date()
         sessionVerseID = nil
@@ -161,9 +174,9 @@ public final class ReadingProgressTracker: ObservableObject {
         lastMappedVerse = nil
         accumulatedPausedDuration = 0
         pauseStartTime = nil
-        
+
         isTracking = true
-        
+
         AppLogger.shared.info("Reading progress tracker started for page \(pageNumber)", category: .ui)
     }
     
@@ -204,7 +217,8 @@ public final class ReadingProgressTracker: ObservableObject {
         // Map gaze to a verse
         guard let result = gazeMapper.mapGazeToVerse(
             gazePoint: gazePoint,
-            verses: currentPageVerses
+            verses: currentPageVerses,
+            scrollOffset: currentScrollOffset
         ) else {
             // Gaze is outside the page content area — clear stale dwell state so an
             // out-of-bounds sample cannot silently extend or complete a dwell on the
@@ -236,8 +250,25 @@ public final class ReadingProgressTracker: ObservableObject {
     }
     
     /// Update the page geometry (e.g., after rotation).
-    public func updateGeometry(frame: CGRect) {
-        gazeMapper.updatePageGeometry(frame: frame)
+    ///
+    /// - Parameters:
+    ///   - frame: The on-screen frame of the page content area.
+    ///   - headerOffset: The height of the page header above the lines.
+    public func updateGeometry(frame: CGRect, headerOffset: CGFloat = 40) {
+        gazeMapper.updatePageGeometry(
+            frame: frame,
+            headerOffset: headerOffset,
+            isLandscape: frame.width > frame.height
+        )
+    }
+
+    /// Update how far the page's content has scrolled past its top edge.
+    ///
+    /// Only meaningful in landscape, where lines render inside a scroll view
+    /// taller than the viewport. Call this whenever the scroll position
+    /// changes so subsequent gaze points map to the correct line.
+    public func updateScrollOffset(_ offset: CGFloat) {
+        currentScrollOffset = offset
     }
     
     // MARK: - Dwell Detection

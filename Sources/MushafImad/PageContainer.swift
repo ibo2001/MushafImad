@@ -14,6 +14,7 @@ public struct PageContainer: View {
     @Binding public var selectedVerse: Verse?
     public let onVerseLongPress: (Verse) -> Void
     public let onTap: () -> Void
+    public let onScrollOffsetChange: ((CGFloat) -> Void)?
 
     @State private var pageData: Page?
 
@@ -25,13 +26,15 @@ public struct PageContainer: View {
         highlightedVerse: Verse?,
         selectedVerse: Binding<Verse?>,
         onVerseLongPress: @escaping (Verse) -> Void,
-        onTap: @escaping () -> Void
+        onTap: @escaping () -> Void,
+        onScrollOffsetChange: ((CGFloat) -> Void)? = nil
     ) {
         self.pageNumber = pageNumber
         self.highlightedVerse = highlightedVerse
         self._selectedVerse = selectedVerse
         self.onVerseLongPress = onVerseLongPress
         self.onTap = onTap
+        self.onScrollOffsetChange = onScrollOffsetChange
     }
 
     public var body: some View {
@@ -44,6 +47,7 @@ public struct PageContainer: View {
                         initialHighlightedVerse: highlightedVerse?.page1441?.number == pageNumber ? highlightedVerse : nil,
                         selectedVerse: $selectedVerse,
                         onVerseLongPress: onVerseLongPress,
+                        onScrollOffsetChange: onScrollOffsetChange,
                         header: {
                             PageHeaderView(page: pageData)
                         },

@@ -414,62 +414,68 @@ struct GazeToVerseMapperTests {
     
     @Test
     func testMappingInLandscapeOrientation() async {
-        // Arrange - Landscape (wide and short)
+        // Arrange - Landscape (wide and short). QuranPageView renders landscape
+        // lines inside a vertical scroll view taller than the viewport, using a
+        // 0.7 line-height factor (vs. 0.73 in portrait), so the mapper needs both
+        // the landscape factor and the current scroll offset to resolve a line
+        // that isn't in the first screenful.
         let mapper = GazeToVerseMapper()
         let pageFrame = CGRect(x: 0, y: 0, width: 812, height: 375)
         let headerOffset: CGFloat = 30
-        mapper.updatePageGeometry(frame: pageFrame, headerOffset: headerOffset)
-        
+        mapper.updatePageGeometry(frame: pageFrame, headerOffset: headerOffset, isLandscape: true)
+
         let verse = makeMockVerse(id: 1, number: 1, highlights: [(line: 8, left: 0.0, right: 1.0)])
-        
-        let lineHeight = (812.0 / 1440.0 * 232.0) * 0.73
-        let gazeY = headerOffset + lineHeight * 8.5
-        let gazePoint = makeGazePoint(x: 406, y: gazeY)
-        
+
+        // Line 8's midpoint in content space, then a scroll offset chosen so a
+        // gaze at the viewport's vertical centre lands exactly there.
+        let lineHeight = (812.0 / 1440.0 * 232.0) * 0.7
+        let contentY = headerOffset + lineHeight * 8.5
+        let screenY = pageFrame.height / 2
+        let scrollOffset = contentY - screenY
+        let gazePoint = makeGazePoint(x: 406, y: screenY)
+
         // Act
-        let result = mapper.mapGazeToVerse(gazePoint: gazePoint, verses: [verse])
-        
+        let result = mapper.mapGazeToVerse(gazePoint: gazePoint, verses: [verse], scrollOffset: scrollOffset)
+
         // Assert
-        withKnownIssue(experimentalLandscapeMapping) {
-            #expect(result != nil)
-            #expect(result?.lineIndex == 8)
-            #expect(result?.verseID == 1)
-        }
+        #expect(result != nil)
+        #expect(result?.lineIndex == 8)
+        #expect(result?.verseID == 1)
     }
-    
+
     @Test
     func testGeometryUpdateHandlesOrientationChange() async {
         // Arrange
         let mapper = GazeToVerseMapper()
         let verse = makeMockVerse(id: 1, number: 1, highlights: [(line: 5, left: 0.0, right: 1.0)])
-        
+
         // Start in portrait
         let portraitFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
         mapper.updatePageGeometry(frame: portraitFrame, headerOffset: 40)
-        
+
         let portraitLineHeight = (375.0 / 1440.0 * 232.0) * 0.73
         let portraitGazeY = 40 + portraitLineHeight * 5.5
         let portraitGaze = makeGazePoint(x: 187.5, y: portraitGazeY)
-        
+
         let portraitResult = mapper.mapGazeToVerse(gazePoint: portraitGaze, verses: [verse])
-        
+
         // Rotate to landscape
         let landscapeFrame = CGRect(x: 0, y: 0, width: 812, height: 375)
-        mapper.updatePageGeometry(frame: landscapeFrame, headerOffset: 30)
-        
-        let landscapeLineHeight = (812.0 / 1440.0 * 232.0) * 0.73
-        let landscapeGazeY = 30 + landscapeLineHeight * 5.5
-        let landscapeGaze = makeGazePoint(x: 406, y: landscapeGazeY)
-        
-        let landscapeResult = mapper.mapGazeToVerse(gazePoint: landscapeGaze, verses: [verse])
-        
+        mapper.updatePageGeometry(frame: landscapeFrame, headerOffset: 30, isLandscape: true)
+
+        let landscapeLineHeight = (812.0 / 1440.0 * 232.0) * 0.7
+        let landscapeContentY = 30 + landscapeLineHeight * 5.5
+        let landscapeScreenY = landscapeFrame.height / 2
+        let landscapeScrollOffset = landscapeContentY - landscapeScreenY
+        let landscapeGaze = makeGazePoint(x: 406, y: landscapeScreenY)
+
+        let landscapeResult = mapper.mapGazeToVerse(gazePoint: landscapeGaze, verses: [verse], scrollOffset: landscapeScrollOffset)
+
         // Assert both orientations work correctly
         #expect(portraitResult?.lineIndex == 5)
         #expect(portraitResult?.verseID == 1)
-        withKnownIssue(experimentalLandscapeMapping) {
-            #expect(landscapeResult?.lineIndex == 5)
-            #expect(landscapeResult?.verseID == 1)
-        }
+        #expect(landscapeResult?.lineIndex == 5)
+        #expect(landscapeResult?.verseID == 1)
     }
 
     
@@ -777,12 +783,11 @@ struct GazeToVerseMapperTests {
         
         // Act
         let result = mapper.mapGazeToVerse(gazePoint: gazePoint, verses: [verse1, verse2])
-        
-        // Assert - Should find nearest verse (within 10% threshold)
+
+        // Assert - Should find nearest verse by edge distance (0.2 from each verse,
+        // within the 0.25 threshold)
         #expect(result != nil)
-        withKnownIssue(experimentalNearestVerseFallback) {
-            #expect(result?.verseID != nil)
-        }
+        #expect(result?.verseID != nil)
     }
     
     @Test
