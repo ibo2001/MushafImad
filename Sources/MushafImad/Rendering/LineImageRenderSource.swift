@@ -11,14 +11,14 @@ import SwiftUI
 public struct LineImageRenderSource: MushafRenderSource {
     public init() {}
 
-    public func lineView(page: Int, line: Int, containerSize: CGSize) -> AnyView {
-        let geometry = MushafPageGeometry(containerSize: containerSize)
+    public func lineView(_ context: MushafRenderContext) -> AnyView {
+        let geometry = MushafPageGeometry(containerSize: context.containerSize)
         return AnyView(
             QuranLineImageView(
-                page: page,
-                line: line + 1,
+                page: context.page,
+                line: context.line + 1,
                 imageAspect: MushafPageGeometry.lineImageSize.width / MushafPageGeometry.lineImageSize.height,
-                containerWidth: containerSize.width,
+                containerWidth: context.containerSize.width,
                 scaledImageHeight: geometry.scaledImageHeight
             )
         )

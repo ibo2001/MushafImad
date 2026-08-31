@@ -12,6 +12,7 @@ import SwiftUI
 /// This only governs pages rendered by `QuranPageView` (`DisplayMode.image`
 /// in `MushafView`). `DisplayMode.text` renders through an entirely separate
 /// text view and is unaffected by this configuration.
+@MainActor
 public struct MushafRenderConfiguration {
     public var renderSource: any MushafRenderSource
 

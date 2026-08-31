@@ -239,7 +239,7 @@ private struct LineImageView: View {
                 }
 
                 MushafRendering.configuration.renderSource
-                    .lineView(page: pageNumber, line: line, containerSize: geometry.size)
+                    .lineView(MushafRenderContext(page: pageNumber, line: line, containerSize: geometry.size))
                     .allowsHitTesting(false)
             }
         }
