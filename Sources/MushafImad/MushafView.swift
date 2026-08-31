@@ -441,6 +441,12 @@ public struct MushafView: View {
                 if let action = externalPageTapHandler {
                     action()
                 }
+            },
+            onScrollOffsetChange: { offset in
+                // Only the currently-visible page's scroll drives eye tracking.
+                if eyeTrackingCoordinator.isEnabled && viewModel.scrollPosition == pageNumber {
+                    eyeTrackingCoordinator.updateScrollOffset(offset)
+                }
             }
         )
         .background(

@@ -24,6 +24,16 @@ public struct SelectedVerseRectKey: PreferenceKey {
     }
 }
 
+// Preference key used to bubble up how far the landscape line scroll view has
+// scrolled past its top edge, so eye tracking can map screen gaze points to
+// content-space line positions. Always 0 in portrait, which never scrolls.
+private struct MushafScrollOffsetKey: PreferenceKey {
+    static let defaultValue: CGFloat = 0
+    static func reduce(value: inout CGFloat, nextValue: () -> CGFloat) {
+        value = nextValue()
+    }
+}
+
 public struct QuranPageView<Header: View, Footer: View>: View {
     public let pageNumber: Int
     public var page: Page
@@ -31,19 +41,25 @@ public struct QuranPageView<Header: View, Footer: View>: View {
     @Binding public var selectedVerse: Verse?
     
     public var onVerseLongPress: ((Verse) -> Void)? = nil
-    
+
+    /// Reports how far the landscape line scroll view has scrolled past its
+    /// top edge. Used by eye tracking to map screen gaze points to the
+    /// correct line; never called (stays at the default 0) in portrait.
+    public var onScrollOffsetChange: ((CGFloat) -> Void)? = nil
+
     private let headerBuilder: () -> Header
     private let footerBuilder: () -> Footer
-    
+
     // State to track which verse is currently being pressed (shared across all lines)
     @State private var pressingVerseID: Int? = nil
-    
+
     public init(
         pageNumber: Int,
         page: Page,
         initialHighlightedVerse: Verse?,
         selectedVerse: Binding<Verse?>,
         onVerseLongPress: ((Verse) -> Void)? = nil,
+        onScrollOffsetChange: ((CGFloat) -> Void)? = nil,
         @ViewBuilder header: @escaping () -> Header,
         @ViewBuilder footer: @escaping () -> Footer
     ) {
@@ -52,6 +68,7 @@ public struct QuranPageView<Header: View, Footer: View>: View {
         self.initialHighlightedVerse = initialHighlightedVerse
         self._selectedVerse = selectedVerse
         self.onVerseLongPress = onVerseLongPress
+        self.onScrollOffsetChange = onScrollOffsetChange
         self.headerBuilder = header
         self.footerBuilder = footer
     }
@@ -93,7 +110,16 @@ public struct QuranPageView<Header: View, Footer: View>: View {
                         footerBuilder().padding(.vertical, 40)
                     }
                     .frame(width: availableWidth)
+                    .background(
+                        GeometryReader { scrollContentGeometry in
+                            Color.clear.preference(
+                                key: MushafScrollOffsetKey.self,
+                                value: -scrollContentGeometry.frame(in: .named("mushafLandscapeScroll-\(pageNumber)")).minY
+                            )
+                        }
+                    )
                 }
+                .coordinateSpace(name: "mushafLandscapeScroll-\(pageNumber)")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
                 .scrollBounceBehavior(.basedOnSize)
                 .id("landscape-\(pageNumber)")
@@ -126,8 +152,11 @@ public struct QuranPageView<Header: View, Footer: View>: View {
             }
         }
         .id(pageNumber)
+        .onPreferenceChange(MushafScrollOffsetKey.self) { offset in
+            onScrollOffsetChange?(offset)
+        }
     }
-    
+
     private func handleAyahLongPress(_ verse: Verse) {
         withAnimation {
             // Toggle selection

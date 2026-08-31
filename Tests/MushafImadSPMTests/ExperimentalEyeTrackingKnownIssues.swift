@@ -17,25 +17,3 @@ let experimentalGazeProgression: Comment = """
 Experimental eye tracking: FallbackGazeEstimator's estimated gaze does not \
 progress over time — screenPosition.y stays at its initial value.
 """
-
-/// `GazeToVerseMapper` resolves gaze to a verse only for the portrait geometry it
-/// was configured with; in landscape, and after an orientation change, mapping
-/// returns nil instead of a line/verse.
-let experimentalLandscapeMapping: Comment = """
-Experimental eye tracking: GazeToVerseMapper returns nil in landscape and after \
-an orientation change.
-"""
-
-/// `GazeToVerseMapper` does not fall back to the nearest verse when the gaze
-/// lands between two verses, returning nil rather than the closer one.
-let experimentalNearestVerseFallback: Comment = """
-Experimental eye tracking: GazeToVerseMapper does not fall back to the nearest \
-verse when gaze lands between two verses.
-"""
-
-/// `ReadingProgressTracker` keeps reporting line 0 after `updateGeometry` for a
-/// rotated page, rather than the line the gaze actually falls on.
-let experimentalRotationTracking: Comment = """
-Experimental eye tracking: ReadingProgressTracker still reports line 0 after a \
-geometry update for a rotated page.
-"""
