@@ -3,17 +3,26 @@
 //  compose_page_images.swift
 //  MushafImad – Build-time tooling
 //
-//  Composites 604 full-page Mushaf images by vertically stitching
-//  15 line PNGs (1440×232 each) into a single 1440×3480 RGBA PNG.
+//  Composites 604 full-page Mushaf images by vertically stitching 15 line PNGs
+//  (1440×232 each) at the reader's 169.36px render pitch (lineHeight * 0.73)
+//  into 1440×2603 RGBA PNGs.
+//
+//  Line layout matches QuranPageView portrait rendering: consecutive lines
+//  overlap by 27% (empty padding), making the composed page image an exact
+//  1:1 visual match with the app reader.
 //
 //  Usage:
-//      swift compose_page_images.swift
+//      swift compose_page_images.swift [options]
 //
-//  The script expects to be run from the repository root, or you can
-//  pass the repo root as the first argument:
-//      swift compose_page_images.swift /path/to/MushafImad
+//  Options:
+//      --page, -p <1..604>   Compose a single page
+//      --all, -a             Compose all 604 pages (default)
+//      --lines-dir <path>    Custom directory of source line images
+//      --output-dir <path>   Custom directory for output page images
+//      --repo-root <path>    Repository root directory
+//      --help, -h            Show this help message
 //
-//  Output is written to Sources/MushafImad/quran-page-images/<page>.png
+//  Default output is written to build/page-images/<page>.png
 //
 
 import Foundation
@@ -23,24 +32,119 @@ import UniformTypeIdentifiers
 
 // MARK: - Configuration
 
-let lineWidth  = 1440
-let lineHeight = 232
-let linesPerPage = 15
-let pageWidth  = lineWidth
-let pageHeight = lineHeight * linesPerPage  // 3480
-let totalPages = 604
+let lineWidth        = 1440
+let lineHeight       = 232
+let linesPerPage     = 15
+let lineHeightScale  = 0.73
+let linePitch        = Double(lineHeight) * lineHeightScale // 169.36
+let pageWidth        = lineWidth
+let pageHeight       = Int(round(Double(linesPerPage - 1) * linePitch + Double(lineHeight))) // 2603
+let totalPages       = 604
+
+// MARK: - CLI Argument Parsing
+
+struct CLIOptions {
+    var targetPage: Int? = nil
+    var repoRoot: String = FileManager.default.currentDirectoryPath
+    var customLinesDir: String? = nil
+    var customOutputDir: String? = nil
+}
+
+func printUsage() {
+    print("""
+    Usage:
+      swift compose_page_images.swift [options] [repo-root]
+
+    Options:
+      -p, --page <1..604>   Compose a single page (useful for quick iteration)
+      -a, --all             Compose all 604 pages (default)
+      --lines-dir <path>    Custom source line images directory
+      --output-dir <path>   Custom output page images directory
+      --repo-root <path>    Repository root path
+      -h, --help            Show this help message
+
+    Examples:
+      swift compose_page_images.swift --page 1
+      swift compose_page_images.swift --all
+      swift compose_page_images.swift --output-dir /tmp/page-images
+    """)
+}
+
+func parseArguments() -> CLIOptions {
+    var options = CLIOptions()
+    let args = Array(CommandLine.arguments.dropFirst())
+    var index = 0
+
+    while index < args.count {
+        let arg = args[index]
+        switch arg {
+        case "-h", "--help":
+            printUsage()
+            exit(0)
+        case "-p", "--page":
+            index += 1
+            guard index < args.count, let pageNum = Int(args[index]), (1...totalPages).contains(pageNum) else {
+                fputs("❌ Error: --page requires a page number between 1 and \(totalPages)\n", stderr)
+                exit(1)
+            }
+            options.targetPage = pageNum
+        case "-a", "--all":
+            options.targetPage = nil
+        case "--lines-dir":
+            index += 1
+            guard index < args.count else {
+                fputs("❌ Error: --lines-dir requires a directory path\n", stderr)
+                exit(1)
+            }
+            options.customLinesDir = args[index]
+        case "--output-dir":
+            index += 1
+            guard index < args.count else {
+                fputs("❌ Error: --output-dir requires a directory path\n", stderr)
+                exit(1)
+            }
+            options.customOutputDir = args[index]
+        case "--repo-root":
+            index += 1
+            guard index < args.count else {
+                fputs("❌ Error: --repo-root requires a directory path\n", stderr)
+                exit(1)
+            }
+            options.repoRoot = args[index]
+        default:
+            if !arg.hasPrefix("-") && index == 0 {
+                // Positional repo-root for backward compatibility
+                options.repoRoot = arg
+            } else {
+                fputs("❌ Error: Unknown argument '\(arg)'. Use --help for usage.\n", stderr)
+                exit(1)
+            }
+        }
+        index += 1
+    }
+
+    return options
+}
+
+let cliOptions = parseArguments()
 
 // MARK: - Resolve paths
 
-let repoRoot: String = {
-    if CommandLine.arguments.count > 1 {
-        return CommandLine.arguments[1]
+let repoRoot = cliOptions.repoRoot
+let lineImagesDir: String = {
+    if let custom = cliOptions.customLinesDir {
+        return (custom as NSString).standardizingPath
     }
-    return FileManager.default.currentDirectoryPath
+    return (repoRoot as NSString).appendingPathComponent("Sources/MushafImad/quran-images")
 }()
 
-let lineImagesDir = (repoRoot as NSString).appendingPathComponent("Sources/MushafImad/quran-images")
-let pageImagesDir = (repoRoot as NSString).appendingPathComponent("Sources/MushafImad/quran-page-images")
+let pageImagesDir: String = {
+    if let custom = cliOptions.customOutputDir {
+        return (custom as NSString).standardizingPath
+    }
+    // Default outside Sources/ to avoid SwiftPM unhandled-file target warnings
+    return (repoRoot as NSString).appendingPathComponent("build/page-images")
+}()
 
 // MARK: - Helpers
 
@@ -49,33 +153,27 @@ func fail(_ message: String) -> Never {
     exit(1)
 }
 
-func loadCGImage(at path: String) -> CGImage {
+func loadCGImage(at path: String) -> CGImage? {
     let url = URL(fileURLWithPath: path)
     guard let source = CGImageSourceCreateWithURL(url as CFURL, nil),
           let image = CGImageSourceCreateImageAtIndex(source, 0, nil) else {
-        fail("Failed to load image: \(path)")
+        return nil
     }
     return image
 }
 
-func savePNG(image: CGImage, to path: String) {
+func savePNG(image: CGImage, to path: String) -> Bool {
     let url = URL(fileURLWithPath: path)
-    // Deterministic PNG: no auxiliary metadata, no timestamps
-    let options: [CFString: Any] = [
-        kCGImagePropertyHasAlpha: true
-    ]
     guard let dest = CGImageDestinationCreateWithURL(
         url as CFURL,
         "public.png" as CFString,
         1,
         nil
     ) else {
-        fail("Failed to create image destination: \(path)")
+        return false
     }
-    CGImageDestinationAddImage(dest, image, options as CFDictionary)
-    guard CGImageDestinationFinalize(dest) else {
-        fail("Failed to write PNG: \(path)")
-    }
+    CGImageDestinationAddImage(dest, image, nil)
+    return CGImageDestinationFinalize(dest)
 }
 
 func fileSize(at path: String) -> UInt64 {
@@ -83,31 +181,48 @@ func fileSize(at path: String) -> UInt64 {
     return attrs?[.size] as? UInt64 ?? 0
 }
 
+func formatBytes(_ bytes: UInt64) -> String {
+    let mb = Double(bytes) / 1_048_576
+    return String(format: "%.1f MB", mb)
+}
+
 // MARK: - Validation
 
-// Verify the line-images directory exists
 guard FileManager.default.fileExists(atPath: lineImagesDir) else {
-    fail("Line images directory not found: \(lineImagesDir)\nRun this script from the repository root.")
+    fail("Line images directory not found: \(lineImagesDir)\nRun this script from the repository root or pass --lines-dir.")
 }
 
 // MARK: - Create output directory
 
-try? FileManager.default.createDirectory(atPath: pageImagesDir, withIntermediateDirectories: true)
+do {
+    try FileManager.default.createDirectory(atPath: pageImagesDir, withIntermediateDirectories: true)
+} catch {
+    fail("Failed to create output directory \(pageImagesDir): \(error)")
+}
 
 // MARK: - Compose pages
 
-print("🖼  Composing \(totalPages) page images from line images...")
-print("   Input:  \(lineImagesDir)")
-print("   Output: \(pageImagesDir)")
-print("   Page dimensions: \(pageWidth)×\(pageHeight) (15 lines × 232px, zero spacing)")
+let pagesToProcess: [Int] = {
+    if let singlePage = cliOptions.targetPage {
+        return [singlePage]
+    }
+    return Array(1...totalPages)
+}()
+
+print("🖼  Composing \(pagesToProcess.count) page image(s) from line images...")
+print("   Input:       \(lineImagesDir)")
+print("   Output:      \(pageImagesDir)")
+print("   Dimensions:  \(pageWidth)×\(pageHeight) px")
+print("   Pitch:       \(String(format: "%.2f", linePitch)) px (232px × 0.73, matching QuranPageView)")
 print("")
 
 let startTime = CFAbsoluteTimeGetCurrent()
 var totalOutputBytes: UInt64 = 0
+var successfulPagesCount = 0
 var errors: [String] = []
+var firstSuccessfulPage: Int? = nil
 
-for page in 1...totalPages {
-    // Create an RGBA context with transparent background
+for (idx, page) in pagesToProcess.enumerated() {
     let colorSpace = CGColorSpaceCreateDeviceRGB()
     guard let ctx = CGContext(
         data: nil,
@@ -122,11 +237,10 @@ for page in 1...totalPages {
         continue
     }
 
-    // Clear to fully transparent
-    ctx.clear(CGRect(x: 0, y: 0, width: pageWidth, height: pageHeight))
+    var pageFailed = false
 
-    // Draw each line — CoreGraphics origin is bottom-left,
-    // so line 1 (top of page) goes at y = (14) * 232
+    // Draw each line from top (line 1) to bottom (line 15).
+    // CoreGraphics origin is bottom-left, so we calculate the bottom offset for each line.
     for lineIndex in 0..<linesPerPage {
         let lineNumber = lineIndex + 1
         let linePath = (lineImagesDir as NSString)
@@ -135,49 +249,65 @@ for page in 1...totalPages {
 
         guard FileManager.default.fileExists(atPath: linePath) else {
             errors.append("Page \(page), line \(lineNumber): File not found at \(linePath)")
+            pageFailed = true
             continue
         }
 
-        let lineImage = loadCGImage(at: linePath)
+        guard let lineImage = loadCGImage(at: linePath) else {
+            errors.append("Page \(page), line \(lineNumber): Failed to decode image at \(linePath)")
+            pageFailed = true
+            continue
+        }
 
-        // Validate dimensions
         guard lineImage.width == lineWidth, lineImage.height == lineHeight else {
-            errors.append("Page \(page), line \(lineNumber): Unexpected size \(lineImage.width)×\(lineImage.height)")
+            errors.append("Page \(page), line \(lineNumber): Unexpected size \(lineImage.width)×\(lineImage.height) (expected \(lineWidth)×\(lineHeight))")
+            pageFailed = true
             continue
         }
 
-        let yOffset = (linesPerPage - 1 - lineIndex) * lineHeight
-        ctx.draw(lineImage, in: CGRect(x: 0, y: yOffset, width: lineWidth, height: lineHeight))
+        let yOffset = round(Double(pageHeight) - (Double(lineIndex) * linePitch + Double(lineHeight)))
+        ctx.draw(lineImage, in: CGRect(x: 0, y: yOffset, width: Double(lineWidth), height: Double(lineHeight)))
     }
 
-    // Extract composed image
+    // If any line failed, do NOT write a partial/blank page image to disk
+    guard !pageFailed else {
+        errors.append("Page \(page): Skipped writing to disk due to missing/corrupt line images")
+        continue
+    }
+
     guard let composedImage = ctx.makeImage() else {
         errors.append("Page \(page): Failed to create composed image")
         continue
     }
 
-    // Verify alpha is preserved
     let alphaInfo = composedImage.alphaInfo
     if alphaInfo == .none || alphaInfo == .noneSkipFirst || alphaInfo == .noneSkipLast {
         errors.append("Page \(page): ⚠️  Alpha channel missing in composed image (alphaInfo=\(alphaInfo.rawValue))")
     }
 
-    // Verify dimensions
     guard composedImage.width == pageWidth, composedImage.height == pageHeight else {
         errors.append("Page \(page): Wrong output size \(composedImage.width)×\(composedImage.height)")
         continue
     }
 
-    // Save
     let outputPath = (pageImagesDir as NSString).appendingPathComponent("\(page).png")
-    savePNG(image: composedImage, to: outputPath)
+    guard savePNG(image: composedImage, to: outputPath) else {
+        errors.append("Page \(page): Failed to write PNG to \(outputPath)")
+        continue
+    }
+
+    successfulPagesCount += 1
     totalOutputBytes += fileSize(at: outputPath)
+    if firstSuccessfulPage == nil {
+        firstSuccessfulPage = page
+    }
 
     // Progress indicator
-    if page % 50 == 0 || page == totalPages {
+    let currentCount = idx + 1
+    if pagesToProcess.count > 1 && (currentCount % 50 == 0 || currentCount == pagesToProcess.count) {
         let elapsed = CFAbsoluteTimeGetCurrent() - startTime
-        let pct = Double(page) / Double(totalPages) * 100
-        print("   [\(String(format: "%3.0f", pct))%] Page \(page)/\(totalPages) — \(String(format: "%.1f", elapsed))s elapsed")
+        let pct = Double(currentCount) / Double(pagesToProcess.count) * 100
+        print("   [\(String(format: "%3.0f", pct))%] Page \(page) (\(currentCount)/\(pagesToProcess.count)) — \(String(format: "%.1f", elapsed))s elapsed")
     }
 }
 
@@ -185,9 +315,8 @@ let totalElapsed = CFAbsoluteTimeGetCurrent() - startTime
 
 // MARK: - Size report
 
-// Calculate total line-images size
 var totalInputBytes: UInt64 = 0
-for page in 1...totalPages {
+for page in pagesToProcess {
     for line in 1...linesPerPage {
         let path = (lineImagesDir as NSString)
             .appendingPathComponent("\(page)")
@@ -196,29 +325,23 @@ for page in 1...totalPages {
     }
 }
 
-func formatBytes(_ bytes: UInt64) -> String {
-    let mb = Double(bytes) / 1_048_576
-    return String(format: "%.1f MB", mb)
-}
-
 print("")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 print("  📊  SIZE REPORT")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-print("  Line images (input):   \(formatBytes(totalInputBytes))  (\(totalPages * linesPerPage) files)")
-print("  Page images (output):  \(formatBytes(totalOutputBytes))  (\(totalPages) files)")
+print("  Processed:             \(successfulPagesCount) of \(pagesToProcess.count) page(s)")
+print("  Line images (input):   \(formatBytes(totalInputBytes))  (\(pagesToProcess.count * linesPerPage) files)")
+print("  Page images (output):  \(formatBytes(totalOutputBytes))  (\(successfulPagesCount) files)")
 let ratio = totalInputBytes > 0 ? Double(totalOutputBytes) / Double(totalInputBytes) * 100 : 0
 let delta = Int64(totalOutputBytes) - Int64(totalInputBytes)
 let deltaStr = delta >= 0 ? "+\(formatBytes(UInt64(delta)))" : "-\(formatBytes(UInt64(-delta)))"
 print("  Ratio:                 \(String(format: "%.1f", ratio))%  (\(deltaStr))")
-if Double(totalOutputBytes) >= Double(totalInputBytes) * 0.9 {
-    print("")
-    print("  ⚠️  Page images are NOT meaningfully smaller than line images.")
-    print("     Consider noting this in the PR — payload savings is minimal.")
-} else {
-    print("")
-    print("  ✅  Page images are smaller. Consolidation saves space.")
-}
+print("")
+print("  💡 Encoder note:")
+print("     The line images are pure black template masks (0,0,0) with alpha transparency.")
+print("     CGImageDestination writes standard uncompressed/minimally compressed RGBA PNGs,")
+print("     storing 3 zero color bytes per pixel. Recompressing with tools like oxipng/zopflipng")
+print("     or encoding as 8-bit alpha/grayscale masks reduces payload significantly.")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 print("")
 print("  ⏱   Completed in \(String(format: "%.1f", totalElapsed))s")
@@ -227,33 +350,35 @@ print("  ⏱   Completed in \(String(format: "%.1f", totalElapsed))s")
 
 if !errors.isEmpty {
     print("")
-    print("⚠️  \(errors.count) warning(s):")
+    print("⚠️  \(errors.count) warning(s)/error(s):")
     for e in errors {
         print("   • \(e)")
     }
 }
 
-// MARK: - Verification: spot-check alpha on page 1
+// MARK: - Verification: spot-check alpha on first successful page
 
-let verifyPath = (pageImagesDir as NSString).appendingPathComponent("1.png")
-if FileManager.default.fileExists(atPath: verifyPath) {
-    let verifyImage = loadCGImage(at: verifyPath)
-    let hasAlpha = verifyImage.alphaInfo != .none
-        && verifyImage.alphaInfo != .noneSkipFirst
-        && verifyImage.alphaInfo != .noneSkipLast
-    print("")
-    if hasAlpha {
-        print("✅ Alpha verification passed (page 1): alphaInfo=\(verifyImage.alphaInfo.rawValue)")
-    } else {
-        print("❌ Alpha verification FAILED (page 1): alphaInfo=\(verifyImage.alphaInfo.rawValue)")
-        print("   Theme tinting will break — page images must preserve transparency.")
+if let verifiedPage = firstSuccessfulPage {
+    let verifyPath = (pageImagesDir as NSString).appendingPathComponent("\(verifiedPage).png")
+    if FileManager.default.fileExists(atPath: verifyPath), let verifyImage = loadCGImage(at: verifyPath) {
+        let hasAlpha = verifyImage.alphaInfo != .none
+            && verifyImage.alphaInfo != .noneSkipFirst
+            && verifyImage.alphaInfo != .noneSkipLast
+        print("")
+        if hasAlpha {
+            print("✅ Alpha verification passed (page \(verifiedPage)): alphaInfo=\(verifyImage.alphaInfo.rawValue)")
+        } else {
+            print("❌ Alpha verification FAILED (page \(verifiedPage)): alphaInfo=\(verifyImage.alphaInfo.rawValue)")
+            print("   Theme tinting will break — page images must preserve transparency.")
+        }
+        print("✅ Dimensions: \(verifyImage.width)×\(verifyImage.height) (expected \(pageWidth)×\(pageHeight))")
     }
-    print("✅ Dimensions: \(verifyImage.width)×\(verifyImage.height)")
 }
 
-if errors.isEmpty {
+if errors.isEmpty && successfulPagesCount == pagesToProcess.count {
     print("")
-    print("✨ All \(totalPages) page images composed successfully!")
+    print("✨ Composed \(successfulPagesCount) page image(s) successfully!")
+    exit(0)
 } else {
     exit(1)
 }

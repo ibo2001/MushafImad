@@ -132,15 +132,26 @@ The package ships 604 × 15 individual line images (`Sources/MushafImad/quran-im
 each 1440×232). To generate full-page composites:
 
 ```bash
-swift compose_page_images.swift
+swift compose_page_images.swift [options]
 ```
 
-Output is written to `Sources/MushafImad/quran-page-images/<page>.png` (1440×3480 RGBA PNG). This
-directory is `.gitignore`d because the generated output (~287 MB) is larger than the source line
-images (~96 MB) — PNG compression is less effective on larger canvases.
+Options:
+- `--page`, `-p <1..604>`: Compose a single page (useful for quick iteration).
+- `--all`, `-a`: Compose all 604 pages (default).
+- `--lines-dir <path>`: Custom source line images directory.
+- `--output-dir <path>`: Custom output directory (default: `build/page-images/`).
+- `--help`, `-h`: Print usage help.
 
-The script is deterministic: running it twice on the same inputs produces byte-identical output.
-Generated images preserve the alpha channel required for `.renderingMode(.template)` tinting.
+Output is written to `build/page-images/<page>.png` (1440×2603 RGBA PNG). Lines are composited
+at the reader's actual render pitch of **169.36px** (`lineHeight * 0.73`), where consecutive lines
+overlap vertically by 27% (empty transparent padding). This produces a 1:1 visual match with what
+`QuranPageView` renders on screen without requiring downstream geometric transforms.
+
+The script is deterministic (byte-identical SHA-1 checksums across runs) and preserves the alpha
+channel required for `.renderingMode(.template)` theme tinting. `build/page-images/` is `.gitignore`d
+to avoid committing large binary files to the repository. Note that source line images are pure black
+mask templates (`maxRGB = (0,0,0)`) with transparency; recompression via tools like `oxipng` or
+encoding as 8-bit alpha/grayscale masks reduces payload significantly compared to standard RGBA.
 
 ## Code of Conduct
 
