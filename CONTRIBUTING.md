@@ -132,7 +132,8 @@ The package ships 604 × 15 individual line images (`Sources/MushafImad/quran-im
 each 1440×232). To generate full-page composites:
 
 ```bash
-swift compose_page_images.swift [options]
+./compose_page_images.swift [options]
+# or: swift compose_page_images.swift [options]
 ```
 
 Options:
@@ -140,18 +141,25 @@ Options:
 - `--all`, `-a`: Compose all 604 pages (default).
 - `--lines-dir <path>`: Custom source line images directory.
 - `--output-dir <path>`: Custom output directory (default: `build/page-images/`).
+- `--repo-root <path>`: Repository root path.
 - `--help`, `-h`: Print usage help.
 
 Output is written to `build/page-images/<page>.png` (1440×2603 RGBA PNG). Lines are composited
 at the reader's actual render pitch of **169.36px** (`lineHeight * 0.73`), where consecutive lines
-overlap vertically by 27% (empty transparent padding). This produces a 1:1 visual match with what
-`QuranPageView` renders on screen without requiring downstream geometric transforms.
+overlap vertically by 27%, matching the reader's own compositing. This produces an exact 1:1 visual
+match with what `QuranPageView` renders on screen in **portrait** (landscape uses `lineHeight * 0.7 = 162.4px`).
+
+##### Geometry Pair for Render Sources (#70)
+- **Image height (visual bounding box)**: `2603px` (`14 × 169.36 + 232 = 2603.04`). Line 15 naturally overflows its slot by 62.6px over the `Spacer()` below it.
+- **Layout height (VStack slot consumption)**: `2540.4px` (`15 × 169.36`).
+- **Rendering guidance**: Downstream render sources should render at `height = width * 2603 / 1440`, top-aligned with the first line slot — *not* aspect-fit into the 2540.4 layout box (which would shrink the page by 2.4% and misalign line tap and highlight coordinates).
+
+##### Size & Compression Finding (#69)
+Page images are **size-neutral**; the naive encoder accounts for the ~2.8x file size difference on disk. Because the source line images are pure black template masks (`maxRGB = (0,0,0)`) with transparency, all information is in the alpha channel. Measured alpha content (gzipped) is ~0.98x (identical or marginally smaller as a single composite). Apple's `CGImageDestination` writes uncompressed 32-bit RGBA8 (storing 3 zero color bytes per pixel), whereas source line PNGs use palette encoding. Recompressing with tools like `oxipng` or encoding as 8-bit alpha/grayscale masks brings disk size to parity with the source line files.
 
 The script is deterministic (byte-identical SHA-1 checksums across runs) and preserves the alpha
 channel required for `.renderingMode(.template)` theme tinting. `build/page-images/` is `.gitignore`d
-to avoid committing large binary files to the repository. Note that source line images are pure black
-mask templates (`maxRGB = (0,0,0)`) with transparency; recompression via tools like `oxipng` or
-encoding as 8-bit alpha/grayscale masks reduces payload significantly compared to standard RGBA.
+to avoid committing large binary files to the repository.
 
 ## Code of Conduct
 

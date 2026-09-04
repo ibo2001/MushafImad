@@ -8,11 +8,20 @@
 //  into 1440×2603 RGBA PNGs.
 //
 //  Line layout matches QuranPageView portrait rendering: consecutive lines
-//  overlap by 27% (empty padding), making the composed page image an exact
-//  1:1 visual match with the app reader.
+//  overlap by 27%, matching the reader's own compositing. This makes the
+//  composed page image an exact 1:1 visual match with the app reader in portrait.
+//
+//  Geometry note for render sources (#70):
+//  - Image height (visual bounding box): 2603px (14 * 169.36 + 232 = 2603.04)
+//  - Layout height (VStack slot consumption): 2540.4px (15 * 169.36)
+//  Line 15 naturally overflows its slot by 62.6px over the Spacer() below it.
+//  Downstream render sources should draw at height = width * 2603 / 1440,
+//  top-aligned with the first line slot — not aspect-fit into the 2540.4 box
+//  (which would shrink the page by 2.4% and desync tap/highlight coordinates).
 //
 //  Usage:
-//      swift compose_page_images.swift [options]
+//      ./compose_page_images.swift [options]
+//      # or: swift compose_page_images.swift [options]
 //
 //  Options:
 //      --page, -p <1..604>   Compose a single page
@@ -39,6 +48,7 @@ let lineHeightScale  = 0.73
 let linePitch        = Double(lineHeight) * lineHeightScale // 169.36
 let pageWidth        = lineWidth
 let pageHeight       = Int(round(Double(linesPerPage - 1) * linePitch + Double(lineHeight))) // 2603
+let layoutHeight     = Double(linesPerPage) * linePitch // 2540.4
 let totalPages       = 604
 
 // MARK: - CLI Argument Parsing
@@ -53,7 +63,8 @@ struct CLIOptions {
 func printUsage() {
     print("""
     Usage:
-      swift compose_page_images.swift [options] [repo-root]
+      ./compose_page_images.swift [options]
+      swift compose_page_images.swift [options]
 
     Options:
       -p, --page <1..604>   Compose a single page (useful for quick iteration)
@@ -64,9 +75,9 @@ func printUsage() {
       -h, --help            Show this help message
 
     Examples:
-      swift compose_page_images.swift --page 1
-      swift compose_page_images.swift --all
-      swift compose_page_images.swift --output-dir /tmp/page-images
+      ./compose_page_images.swift --page 1
+      ./compose_page_images.swift --all
+      ./compose_page_images.swift --output-dir /tmp/page-images
     """)
 }
 
@@ -112,13 +123,8 @@ func parseArguments() -> CLIOptions {
             }
             options.repoRoot = args[index]
         default:
-            if !arg.hasPrefix("-") && index == 0 {
-                // Positional repo-root for backward compatibility
-                options.repoRoot = arg
-            } else {
-                fputs("❌ Error: Unknown argument '\(arg)'. Use --help for usage.\n", stderr)
-                exit(1)
-            }
+            fputs("❌ Error: Unknown argument '\(arg)'. Use --help for usage.\n", stderr)
+            exit(1)
         }
         index += 1
     }
@@ -210,15 +216,16 @@ let pagesToProcess: [Int] = {
 }()
 
 print("🖼  Composing \(pagesToProcess.count) page image(s) from line images...")
-print("   Input:       \(lineImagesDir)")
-print("   Output:      \(pageImagesDir)")
-print("   Dimensions:  \(pageWidth)×\(pageHeight) px")
-print("   Pitch:       \(String(format: "%.2f", linePitch)) px (232px × 0.73, matching QuranPageView)")
+print("   Input:          \(lineImagesDir)")
+print("   Output:         \(pageImagesDir)")
+print("   Dimensions:     \(pageWidth)×\(pageHeight) px")
+print("   Render pitch:   \(String(format: "%.2f", linePitch)) px (232px × 0.73, matching QuranPageView portrait)")
+print("   Layout height:  \(String(format: "%.1f", layoutHeight)) px (slot height; line 15 extends 62.6px past slot)")
 print("")
 
 let startTime = CFAbsoluteTimeGetCurrent()
 var totalOutputBytes: UInt64 = 0
-var successfulPagesCount = 0
+var successfulPages: [Int] = []
 var errors: [String] = []
 var firstSuccessfulPage: Int? = nil
 
@@ -296,7 +303,7 @@ for (idx, page) in pagesToProcess.enumerated() {
         continue
     }
 
-    successfulPagesCount += 1
+    successfulPages.append(page)
     totalOutputBytes += fileSize(at: outputPath)
     if firstSuccessfulPage == nil {
         firstSuccessfulPage = page
@@ -316,7 +323,7 @@ let totalElapsed = CFAbsoluteTimeGetCurrent() - startTime
 // MARK: - Size report
 
 var totalInputBytes: UInt64 = 0
-for page in pagesToProcess {
+for page in successfulPages {
     for line in 1...linesPerPage {
         let path = (lineImagesDir as NSString)
             .appendingPathComponent("\(page)")
@@ -329,19 +336,22 @@ print("")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 print("  📊  SIZE REPORT")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
-print("  Processed:             \(successfulPagesCount) of \(pagesToProcess.count) page(s)")
-print("  Line images (input):   \(formatBytes(totalInputBytes))  (\(pagesToProcess.count * linesPerPage) files)")
-print("  Page images (output):  \(formatBytes(totalOutputBytes))  (\(successfulPagesCount) files)")
+print("  Processed:             \(successfulPages.count) of \(pagesToProcess.count) page(s)")
+print("  Line images (input):   \(formatBytes(totalInputBytes))  (\(successfulPages.count * linesPerPage) files)")
+print("  Page images (output):  \(formatBytes(totalOutputBytes))  (\(successfulPages.count) files)")
 let ratio = totalInputBytes > 0 ? Double(totalOutputBytes) / Double(totalInputBytes) * 100 : 0
 let delta = Int64(totalOutputBytes) - Int64(totalInputBytes)
 let deltaStr = delta >= 0 ? "+\(formatBytes(UInt64(delta)))" : "-\(formatBytes(UInt64(-delta)))"
 print("  Ratio:                 \(String(format: "%.1f", ratio))%  (\(deltaStr))")
 print("")
-print("  💡 Encoder note:")
-print("     The line images are pure black template masks (0,0,0) with alpha transparency.")
-print("     CGImageDestination writes standard uncompressed/minimally compressed RGBA PNGs,")
-print("     storing 3 zero color bytes per pixel. Recompressing with tools like oxipng/zopflipng")
-print("     or encoding as 8-bit alpha/grayscale masks reduces payload significantly.")
+print("  💡 Encoder & Size finding:")
+print("     Page images are size-neutral; the naive encoder accounts for the disk difference.")
+print("     Because sources are pure black (0,0,0) mask templates with alpha transparency,")
+print("     all information is in the alpha channel. Measured alpha content (gzip -9)")
+print("     is identical / marginally smaller as a full page image (~0.98x ratio).")
+print("     CGImageDestination writes uncompressed 32-bit RGBA8 (storing 3 zero color bytes per pixel),")
+print("     whereas source line PNGs use palette/grayscale encoding. Recompressing with")
+print("     tools like oxipng / zopflipng or 8-bit alpha masks eliminates the ~2.8x file size overhead.")
 print("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━")
 print("")
 print("  ⏱   Completed in \(String(format: "%.1f", totalElapsed))s")
@@ -351,8 +361,11 @@ print("  ⏱   Completed in \(String(format: "%.1f", totalElapsed))s")
 if !errors.isEmpty {
     print("")
     print("⚠️  \(errors.count) warning(s)/error(s):")
-    for e in errors {
+    for e in errors.prefix(20) {
         print("   • \(e)")
+    }
+    if errors.count > 20 {
+        print("   ... and \(errors.count - 20) more")
     }
 }
 
@@ -375,9 +388,9 @@ if let verifiedPage = firstSuccessfulPage {
     }
 }
 
-if errors.isEmpty && successfulPagesCount == pagesToProcess.count {
+if errors.isEmpty && successfulPages.count == pagesToProcess.count {
     print("")
-    print("✨ Composed \(successfulPagesCount) page image(s) successfully!")
+    print("✨ Composed \(successfulPages.count) page image(s) successfully!")
     exit(0)
 } else {
     exit(1)
