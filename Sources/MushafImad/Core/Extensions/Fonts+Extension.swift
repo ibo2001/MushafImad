@@ -90,23 +90,26 @@ enum CustomFontName: String {
 
 #if DEBUG
 extension Font {
-    /// Prints all available font families and their font names to console
-    /// Use this to find the correct PostScript name for your custom fonts
+    /// Logs all available font families and their font names.
+    /// Use this to find the correct PostScript name for your custom fonts.
+    /// Routed through AppLogger (category `.ui`, like FontRegistrar) instead of
+    /// `print` so the output is filterable in Console.app and stays out of
+    /// host apps' stdout.
     static func printAvailableFonts() {
         #if canImport(UIKit) && DEBUG
-        print("=== Available Font Families ===")
+        AppLogger.shared.debug("=== Available Font Families ===", category: .ui)
         for family in UIFont.familyNames.sorted() {
-            print("\nFamily: \(family)")
+            AppLogger.shared.debug("\nFamily: \(family)", category: .ui)
             for fontName in UIFont.fontNames(forFamilyName: family) {
-                print("  - \(fontName)")
+                AppLogger.shared.debug("  - \(fontName)", category: .ui)
             }
         }
-        print("\n=== Custom Fonts ===")
+        AppLogger.shared.debug("\n=== Custom Fonts ===", category: .ui)
         let customFontFiles = ["SurahName.otf", "HafsSmart_08.ttf", "Kitab-Bold.ttf",
                                "Kitab-Regular.ttf", "QuranNumbers.ttf", "QuranTitles.ttf",
                                "UthmanicHafs1 Ver17.ttf", "UthmanTN1 Ver20.ttf", "UthmanTN1B Ver20.ttf"]
         for fontFile in customFontFiles {
-            print("File: \(fontFile)")
+            AppLogger.shared.debug("File: \(fontFile)", category: .ui)
         }
         #endif
     }

@@ -242,7 +242,6 @@ public class TiltScrollManager: ObservableObject {
     private func updateScrollPosition() {
 #if canImport(UIKit)
         guard let scrollView = scrollView else {
-            // print("[TiltScrollManager] No ScrollView to scroll")
             return
         }
         
@@ -255,7 +254,6 @@ public class TiltScrollManager: ObservableObject {
             return
         }
         
-        // print("[TiltScrollManager] Scrolling by \(scrollVelocity)")
         if scrollAxis == .vertical {
             let newOffset = CGPoint(
                 x: scrollView.contentOffset.x,
