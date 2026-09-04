@@ -36,7 +36,7 @@ public struct TiltSettingsView: View {
                     .foregroundStyle(.secondary)
             }
         }
-        .navigationTitle("Scroll Settings")
+        .navigationTitle(String(localized: "Scroll Settings"))
     }
 }
 

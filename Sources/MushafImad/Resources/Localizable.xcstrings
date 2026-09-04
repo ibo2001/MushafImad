@@ -1882,6 +1882,386 @@
     },
     "سورة %@" : {
       "shouldTranslate" : false
+    },
+    "Tilt to Scroll" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التمرير بالإمالة"
+          }
+        }
+      }
+    },
+    "Enable Tilt Scrolling" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تفعيل التمرير بالإمالة"
+          }
+        }
+      }
+    },
+    "Sensitivity" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الحساسية"
+          }
+        }
+      }
+    },
+    "Slow" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "بطيء"
+          }
+        }
+      }
+    },
+    "Fast" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سريع"
+          }
+        }
+      }
+    },
+    "Tilt your device forward or backward to scroll automatically. Return to a neutral reading angle (~25°) to stop." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أمِل جهازك للأمام أو للخلف للتمرير تلقائيًا، وعُد إلى زاوية قراءة محايدة (25° تقريبًا) للتوقف."
+          }
+        }
+      }
+    },
+    "Scroll Settings" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إعدادات التمرير"
+          }
+        }
+      }
+    },
+    "Experimental Feature" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "ميزة تجريبية"
+          }
+        }
+      }
+    },
+    "Eye tracking is a research feature. Accuracy may vary by device and lighting conditions." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تتبع العين ميزة بحثية. قد تختلف الدقة حسب الجهاز وظروف الإضاءة."
+          }
+        }
+      }
+    },
+    "Enable Eye Tracking" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تفعيل تتبع العين"
+          }
+        }
+      }
+    },
+    "Device Support" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "دعم الجهاز"
+          }
+        }
+      }
+    },
+    "Supported" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مدعوم"
+          }
+        }
+      }
+    },
+    "Not Available" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "غير متوفر"
+          }
+        }
+      }
+    },
+    "Use Reading Estimation" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "استخدام تقدير القراءة"
+          }
+        }
+      }
+    },
+    "Estimates progress based on reading speed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يقدّر تقدم القراءة بناءً على سرعتها"
+          }
+        }
+      }
+    },
+    "Tracking" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "التتبع"
+          }
+        }
+      }
+    },
+    "Eye tracking requires an iPhone with TrueDepth camera (iPhone X or later). Your camera data stays entirely on-device and is never stored or transmitted." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يتطلب تتبع العين iPhone مزودًا بكاميرا TrueDepth (iPhone X أو أحدث). تبقى بيانات الكاميرا على جهازك بالكامل، ولا تُخزَّن أو تُنقَل أبدًا."
+          }
+        }
+      }
+    },
+    "Auto-Highlight Verse" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تمييز الآية تلقائيًا"
+          }
+        }
+      }
+    },
+    "Highlights the verse you're reading" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "يُميِّز الآية التي تقرؤها"
+          }
+        }
+      }
+    },
+    "Auto-Advance Page" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تقديم الصفحة تلقائيًا"
+          }
+        }
+      }
+    },
+    "Automatically flip to next page when finished reading" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الانتقال تلقائيًا إلى الصفحة التالية عند الانتهاء من القراءة"
+          }
+        }
+      }
+    },
+    "Behavior" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "السلوك"
+          }
+        }
+      }
+    },
+    "Dwell Time" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "مدة التثبيت"
+          }
+        }
+      }
+    },
+    "How long your gaze must rest on a verse before it's marked as read" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المدة التي يجب أن يستقر فيها نظرك على الآية قبل تعليمها كمقروءة"
+          }
+        }
+      }
+    },
+    "Reading Speed" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "سرعة القراءة"
+          }
+        }
+      }
+    },
+    "Arabic words per minute (used for fallback estimation)" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "كلمات عربية في الدقيقة (تُستخدم للتقدير الاحتياطي)"
+          }
+        }
+      }
+    },
+    "Tuning" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الضبط"
+          }
+        }
+      }
+    },
+    "Show Tracking Overlay" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إظهار طبقة التتبع"
+          }
+        }
+      }
+    },
+    "Show Debug Info" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "إظهار معلومات التصحيح"
+          }
+        }
+      }
+    },
+    "Developer" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "المطور"
+          }
+        }
+      }
+    },
+    "These options are for testing and development. The overlay shows a dot where your gaze is estimated to be." : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "هذه الخيارات للاختبار والتطوير. تُظهر الطبقة نقطةً في موضع نظرك المقدَّر."
+          }
+        }
+      }
+    },
+    "Privacy Commitment" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الالتزام بالخصوصية"
+          }
+        }
+      }
+    },
+    "Camera data is processed on-device only" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تُعالَج بيانات الكاميرا على الجهاز فقط"
+          }
+        }
+      }
+    },
+    "No gaze data is uploaded or stored" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "لا تُرفَع بيانات النظر ولا تُخزَّن"
+          }
+        }
+      }
+    },
+    "Feature is entirely opt-in" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "الميزة اختيارية بالكامل"
+          }
+        }
+      }
+    },
+    "Stop tracking to immediately release camera" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "أوقِف التتبع لتحرير الكاميرا فورًا"
+          }
+        }
+      }
+    },
+    "Eye Tracking" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تتبع العين"
+          }
+        }
+      }
+    },
+    "Done" : {
+      "localizations" : {
+        "ar" : {
+          "stringUnit" : {
+            "state" : "translated",
+            "value" : "تم"
+          }
+        }
+      }
     }
   },
   "version" : "1.1"

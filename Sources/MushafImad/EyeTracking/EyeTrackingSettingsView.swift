@@ -244,7 +244,7 @@ public struct EyeTrackingSettingsView: View {
     // MARK: - Helpers
     
     @ViewBuilder
-    private func privacyItem(icon: String, text: String) -> some View {
+    private func privacyItem(icon: String, text: LocalizedStringKey) -> some View {
         HStack(spacing: 8) {
             Image(systemName: icon)
                 .font(.system(size: 12))
