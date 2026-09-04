@@ -155,13 +155,14 @@ struct FallbackGazeEstimatorTests {
         try? await Task.sleep(nanoseconds: 300_000_000)
         let firstGaze = try #require(await waitForGaze(from: estimator))
 
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Wait past one full line: secondsPerLine is 600 / WPM (1.0 s at 600),
+        // plus slack so CI scheduling delay cannot leave both samples on line 0.
+        let lineTime = 600.0 / estimator.arabicWordsPerMinute
+        try? await Task.sleep(nanoseconds: UInt64((lineTime + 0.2) * 1_000_000_000))
         let secondGaze = try #require(await waitForGaze(from: estimator))
 
         // Assert - Y position should increase (moving down the page)
-        withKnownIssue(experimentalGazeProgression) {
-            #expect(secondGaze.screenPosition.y > firstGaze.screenPosition.y)
-        }
+        #expect(secondGaze.screenPosition.y > firstGaze.screenPosition.y)
     }
     
     @Test
@@ -193,24 +194,27 @@ struct FallbackGazeEstimatorTests {
         // Arrange
         let estimator = FallbackGazeEstimator()
         let pageFrame = CGRect(x: 0, y: 0, width: 375, height: 812)
+        let slowWPM = 40.0
+        let fastWPM = 200.0
+        // Sample after the fast rate has crossed a line (600 / 200 = 3 s) but
+        // long before the slow rate does (600 / 40 = 15 s).
+        let waitNanoseconds = UInt64((600.0 / fastWPM + 1.0) * 1_000_000_000)
         
         // Test with slow reading speed
-        estimator.arabicWordsPerMinute = 40
+        estimator.arabicWordsPerMinute = slowWPM
         estimator.startForPage(pageFrame: pageFrame)
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        try? await Task.sleep(nanoseconds: waitNanoseconds)
         let slowGaze = try #require(await waitForGaze(from: estimator))
         estimator.stopEstimating()
 
         // Test with fast reading speed
-        estimator.arabicWordsPerMinute = 200
+        estimator.arabicWordsPerMinute = fastWPM
         estimator.startForPage(pageFrame: pageFrame)
-        try? await Task.sleep(nanoseconds: 300_000_000)
+        try? await Task.sleep(nanoseconds: waitNanoseconds)
         let fastGaze = try #require(await waitForGaze(from: estimator))
 
         // Assert - faster reading should progress further down the page
-        withKnownIssue(experimentalGazeProgression) {
-            #expect(fastGaze.screenPosition.y > slowGaze.screenPosition.y)
-        }
+        #expect(fastGaze.screenPosition.y > slowGaze.screenPosition.y)
     }
     
     @Test
@@ -265,13 +269,13 @@ struct FallbackGazeEstimatorTests {
         estimator.resume()
         
         let afterResume = try #require(await waitForGaze(from: estimator))
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Wait past one full line (600 / WPM + slack), as above.
+        let lineTime = 600.0 / estimator.arabicWordsPerMinute
+        try? await Task.sleep(nanoseconds: UInt64((lineTime + 0.2) * 1_000_000_000))
         let afterMoreTime = try #require(await waitForGaze(from: estimator))
 
         // Assert - should continue progressing after resume
-        withKnownIssue(experimentalGazeProgression) {
-            #expect(afterMoreTime.screenPosition.y > afterResume.screenPosition.y)
-        }
+        #expect(afterMoreTime.screenPosition.y > afterResume.screenPosition.y)
     }
     
     @Test
@@ -323,7 +327,10 @@ struct FallbackGazeEstimatorTests {
         
         // Act
         estimator.startForPage(pageFrame: pageFrame)
-        try? await Task.sleep(nanoseconds: 500_000_000)
+        // Settle past the first line (600 / WPM = 1.0 s at 600, plus slack)
+        // so the pre-reset sample is genuinely below the post-reset one.
+        let lineTime = 600.0 / estimator.arabicWordsPerMinute
+        try? await Task.sleep(nanoseconds: UInt64((lineTime + 0.5) * 1_000_000_000))
         let beforeReset = try #require(await waitForGaze(from: estimator))
 
         estimator.resetPageTimer()
@@ -331,9 +338,7 @@ struct FallbackGazeEstimatorTests {
         let afterReset = try #require(await waitForGaze(from: estimator))
 
         // Assert - after reset, should be back near the top
-        withKnownIssue(experimentalGazeProgression) {
-            #expect(afterReset.screenPosition.y < beforeReset.screenPosition.y)
-        }
+        #expect(afterReset.screenPosition.y < beforeReset.screenPosition.y)
     }
     
     // MARK: - Confidence Calculation Tests

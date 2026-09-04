@@ -8,12 +8,3 @@ import Testing
 // signal that the underlying work has landed and the marker should come off.
 //
 // Nothing outside the eye-tracking feature depends on these paths.
-
-/// `FallbackGazeEstimator.estimatedGaze` does not advance down the page as time
-/// passes: `screenPosition.y` holds its initial value regardless of elapsed time
-/// or `arabicWordsPerMinute`, so progression, speed, resume, and reset all
-/// observe the same static point.
-let experimentalGazeProgression: Comment = """
-Experimental eye tracking: FallbackGazeEstimator's estimated gaze does not \
-progress over time — screenPosition.y stays at its initial value.
-"""

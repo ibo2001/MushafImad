@@ -87,10 +87,7 @@ A Swift Package that delivers a fully featured Mushaf (Quran) reading experience
 ### Eye Tracking (Experimental)
 
 > [!WARNING]
-> **Eye tracking is experimental and not recommended for production.** Its gaze estimation is
-> incomplete: the fallback estimator's gaze does not advance down the page over time. The
-> corresponding test is marked as a known issue (see
-> `Tests/MushafImadSPMTests/ExperimentalEyeTrackingKnownIssues.swift`).
+> **Eye tracking is experimental and not recommended for production.**
 >
 > The feature is opt-in and self-contained — nothing else in the package depends on it, and the
 > Mushaf reader and audio playback are unaffected if you never enable it.
