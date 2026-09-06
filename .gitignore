@@ -54,6 +54,10 @@ buildServer.json
 # Private working notes (specs, plans, research) — never shipped
 notes/
 
+# Generated page images (composed from line images via compose_page_images.swift)
+# Regenerate locally with: swift compose_page_images.swift
+build/page-images/
+
 # Node.js (not used — prevent accidental commits)
 package-lock.json
 node_modules/
